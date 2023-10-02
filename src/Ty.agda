@@ -103,10 +103,11 @@ data _⊢_⦂_ : Context → Term → Ty → 𝒰 where
 -- weakening / renaming
 
 weaken : ∀ {Γ₁ Γ₂ t T} → Γ₁ ⊆ Γ₂ → Γ₁ ⊢ t ⦂ T → Γ₂ ⊢ t ⦂ T
-weaken {t = .(` x)}   {T}     sub (⊢` {x} p)               = ⊢` (sub T x p)
+weaken {t = .(` x)}   {T}              sub (⊢` {x} p)              =
+  ⊢` (sub T x p)
 weaken {t = .(ƛ x ⇒ N)} {T = .(A ⇒ B)} sub (⊢ƛ {x} {N} {A} {B} ⊢N) =
   ⊢ƛ (weaken (⊆-ext sub) ⊢N)
-weaken {t = .(L · M)}           sub (_⊢·_ {L} {M} ⊢L ⊢M) =
+weaken {t = .(L · M)}                  sub (_⊢·_ {L} {M} ⊢L ⊢M)   = 
   (weaken sub ⊢L) ⊢· (weaken sub ⊢M)
 
 weaken-∅ : ∀ {t T} Γ → ∅ ⊢ t ⦂ T → Γ ⊢ t ⦂ T
