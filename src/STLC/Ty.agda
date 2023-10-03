@@ -1,11 +1,12 @@
-module Ty where
+module STLC.Ty where
 
 open import Prelude
 open import Data.Empty
 open import Data.Dec
 open import Data.String
 open import Data.List
-open import Term
+
+open import STLC.Term
 
 infix  4  _∋_⦂_
 infix  4  _⊢_⦂_
@@ -107,7 +108,7 @@ weaken {t = .(` x)}   {T}              sub (⊢` {x} p)              =
   ⊢` (sub T x p)
 weaken {t = .(ƛ x ⇒ N)} {T = .(A ⇒ B)} sub (⊢ƛ {x} {N} {A} {B} ⊢N) =
   ⊢ƛ (weaken (⊆-ext sub) ⊢N)
-weaken {t = .(L · M)}                  sub (_⊢·_ {L} {M} ⊢L ⊢M)   = 
+weaken {t = .(L · M)}                  sub (_⊢·_ {L} {M} ⊢L ⊢M)   =
   (weaken sub ⊢L) ⊢· (weaken sub ⊢M)
 
 weaken-∅ : ∀ {t T} Γ → ∅ ⊢ t ⦂ T → Γ ⊢ t ⦂ T

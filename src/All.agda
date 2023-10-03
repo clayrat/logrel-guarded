@@ -10,7 +10,7 @@ open import Data.Dec as Dec
 private variable
   ℓ ℓ′ : Level
   A : Type ℓ
-  P : Pred ℓ′ A
+  P Q R : Pred ℓ′ A
   x : A
   @0 xs ys : List A
 
@@ -22,13 +22,24 @@ all-++ : {@0 xs : List A} → All P xs → All P ys → All P (xs ++ ys)
 all-++ []         pys = pys
 all-++ (px ∷ pxs) pys = px ∷ all-++ pxs pys
 
+all-split : {xs : List A} → All P (xs ++ ys) → All P xs × All P ys
+all-split {xs = []}      ps      = [] , ps
+all-split {xs = x ∷ xs} (p ∷ ps) =
+  let xps , yps = all-split {xs = xs} ps in (p ∷ xps) , yps
+
 all-++-left : {xs : List A} → All P (xs ++ ys) → All P xs
-all-++-left {xs = []}    _        = []
-all-++-left {xs = _ ∷ _} (p ∷ ps) = p ∷ all-++-left ps
+all-++-left = fst ∘ all-split
 
 all-++-right : {xs : List A} → All P (xs ++ ys) → All P ys
-all-++-right {xs = []}    ps       = ps
-all-++-right {xs = _ ∷ _} (_ ∷ ps) = all-++-right ps
+all-++-right = snd ∘ all-split
+
+all-map : {@0 xs : List A} → ({@0 x : A} -> P x -> Q x) -> All P xs -> All Q xs
+all-map     f []       = []
+all-map {P} f (p ∷ ps) = f p ∷ all-map {P = P} f ps
+
+all-zipwith : {@0 xs : List A} → ({@0 x : A} -> P x -> Q x → R x) -> All P xs -> All Q xs -> All R xs
+all-zipwith     f [] [] = []
+all-zipwith {P} f (p ∷ ps) (q ∷ qs) = f p q ∷ all-zipwith {P = P} f ps qs
 
 all? : Decidable¹ P → Decidable¹ (λ (xs : List A) → All P xs)
 all? P? []       = yes []
