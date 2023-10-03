@@ -12,11 +12,14 @@ open import STLC.Term
 open import STLC.Ty
 open import STLC.Multi
 
---- R relation
+--- R logical relation
 
-R : (T : Ty) → (t : Term) → 𝒰
-R (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → R T₁ s → R T₂ (t · s))
-R  𝟙        t = (∅ ⊢ t ⦂ 𝟙) × halts t
+R : Ty → Term → 𝒰
+R (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
+              × halts t
+              × (∀ s → R T₁ s → R T₂ (t · s))
+R  𝟙        t = (∅ ⊢ t ⦂ 𝟙)
+              × halts t
 
 R-halts : (T : Ty) → (t : Term) → R T t → halts t
 R-halts (T₁ ⇒ T₂) t (_ , h , _) = h

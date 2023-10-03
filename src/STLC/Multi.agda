@@ -12,7 +12,7 @@ open import All
 open import STLC.Term
 open import STLC.Ty
 
--- multisubstitutions and multiextensions
+-- multisubstitution
 
 Env : 𝒰
 Env = List (String × Term)
@@ -20,13 +20,6 @@ Env = List (String × Term)
 msubst : Env → Term → Term
 msubst []             t = t
 msubst ((x , s) ∷ ss) t = msubst ss (t [ x := s ])
-
-Tass : 𝒰
-Tass = List (String × Ty)
-
-mupdate : Tass → Context → Context
-mupdate []              Γ = Γ
-mupdate ((x , v) ∷ xts) Γ = (mupdate xts Γ) , x ⦂ v
 
 msubst-closed : ∀ t → closed t → ∀ ss → msubst ss t ＝ t
 msubst-closed t ct []             = refl
@@ -66,6 +59,16 @@ msubst-app : ∀ ss t1 t2
            → msubst ss (t1 · t2) ＝ (msubst ss t1) · (msubst ss t2)
 msubst-app []             t1 t2 = refl
 msubst-app ((y , t) ∷ ss) t1 t2 = msubst-app ss (t1 [ y := t ]) (t2 [ y := t ])
+
+-- multiextension
+-- TODO essentially just context concatenation
+
+Tass : 𝒰
+Tass = List (String × Ty)
+
+mupdate : Tass → Context → Context
+mupdate []              Γ = Γ
+mupdate ((x , v) ∷ xts) Γ = (mupdate xts Γ) , x ⦂ v
 
 mupdate-lookup : ∀ c x T
                → mupdate c ∅ ∋ x ⦂ T
