@@ -29,7 +29,7 @@ data R : Ty → Term → 𝒰 where
   R⇒ : ∀ {T₁ T₂ t}
      → ∅ ⊢ t ⦂ (T₁ ⇒ T₂)
      → halts t
-     → (∀ s → ▹ R T₁ s → ▹ R T₂ (t · s))
+     → (∀ s → Part (▹ (R T₁ s)) → Part (▹ (R T₂ (t · s))))
      → R (T₁ ⇒ T₂) t
 -}
 
@@ -217,11 +217,11 @@ msubst-R c e .(ƛ x ⇒ N) .(A ⇒ B) (⊢ƛ {x} {N} {A} {B} ty) i =
                          (multistep-appr (ƛ x ⇒ msubst (drp x e) N) s v V-ƛ P
                                           —↠∘
                                          (((ƛ x ⇒ msubst (drp x e) N) · v)
-                                              —→⟨  subst (λ q → (ƛ x ⇒ msubst (drp x e) N) · v —→ q)
-                                                         (sym $ subst-msubst e x v N
-                                                                  (∅⊢-closed (R-typable-empty A v Rv))
-                                                                  (instantiation-env-closed c e i))
-                                                         (β-ƛ Q) ⟩
+                                              —→⟨ subst (λ q → (ƛ x ⇒ msubst (drp x e) N) · v —→ q)
+                                                        (sym $ subst-msubst e x v N
+                                                                 (∅⊢-closed (R-typable-empty A v Rv))
+                                                                 (instantiation-env-closed c e i))
+                                                        (β-ƛ Q) ⟩
                                                 (msubst e (N [ x := v ]) ∎ᵣ)))
                           R2)
                      (msubst-R ((x , A) ∷ c) ((x , v) ∷ e) N B ty (V-cons Q Rv i)))
