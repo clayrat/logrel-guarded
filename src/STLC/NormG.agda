@@ -8,6 +8,7 @@ open import Data.String
 open import Data.Maybe
 
 open import LaterG
+open import PartialG
 
 open import Interlude
 open import All
@@ -35,7 +36,7 @@ data R : Ty → Term → 𝒰 where
 R-case : (Ty → Term → ▹ 𝒰) → Ty → Term → 𝒰
 R-case R▹ (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
                       × halts t
-                      × (∀ s → ▸ (R▹ T₁ s) → ▸ (R▹ T₂ (t · s)))
+                      × (∀ s → Part (▸ (R▹ T₁ s)) → Part (▸ (R▹ T₂ (t · s))))
 R-case R▹  𝟙        t = (∅ ⊢ t ⦂ 𝟙)
                       × halts t
 
@@ -54,11 +55,11 @@ R𝟙 ty h = ty , h
 
 R⇒ : ∀ {T₁ T₂ t}
    → ∅ ⊢ t ⦂ (T₁ ⇒ T₂) → halts t
-   → (∀ s → ▹ R T₁ s → ▹ R T₂ (t · s))
+   → (∀ s → Part (▹ (R T₁ s)) → Part (▹ (R T₂ (t · s))))
    → R (T₁ ⇒ T₂) t
 R⇒ {T₁} {T₂} {t} ty h r =
-  ty , h , λ s → transport (λ i → (▹[ α ] (pfix R-body (~ i) α T₁ s))
-                                → (▹[ α ] (pfix R-body (~ i) α T₂ (t · s))))
+  ty , h , λ s → transport (λ i → Part (▹[ α ] (pfix R-body (~ i) α T₁ s))
+                                → Part (▹[ α ] (pfix R-body (~ i) α T₂ (t · s))))
                            (r s)
 
 -- destructors
@@ -70,10 +71,10 @@ R𝟙-match = id
 
 R⇒-match : ∀ {T₁ T₂ t}
          → R (T₁ ⇒ T₂) t
-         → (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → ▹ R T₁ s → ▹ R T₂ (t · s))
+         → (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → Part (▹ R T₁ s) → Part (▹ R T₂ (t · s)))
 R⇒-match {T₁} {T₂} {t} (ty , h , r) =
-  ty , h , λ s → transport (λ i → (▹[ α ] (pfix R-body i α T₁ s))
-                                → (▹[ α ] (pfix R-body i α T₂ (t · s))))
+  ty , h , λ s → transport (λ i → Part (▹[ α ] (pfix R-body i α T₁ s))
+                                → Part (▹[ α ] (pfix R-body i α T₂ (t · s))))
                            (r s)
 
 -- projections
@@ -93,7 +94,7 @@ step-preserves-R : ∀ T t t′
 step-preserves-R (T₁ ⇒ T₂) t t′ S r = let tp , h , Ri = R⇒-match r in
   R⇒ (preserve tp S)
      (step-preserves-halting S .fst h)
-     (λ t″ R₁ → ▹map (step-preserves-R T₂ (t · t″) (t′ · t″) (ξ-·₁ S))
+     (λ t″ R₁ → mapᵖ (▹map (step-preserves-R T₂ (t · t″) (t′ · t″) (ξ-·₁ S)))
                      (Ri t″ R₁))
 step-preserves-R  𝟙        t t′ S r = let tp , h = R𝟙-match r in
   R𝟙 (preserve tp S)
@@ -109,8 +110,8 @@ step-preserves-R' : ∀ T t t′
                   → ∅ ⊢ t ⦂ T → (t —→ t′) → R T t′ → R T t
 step-preserves-R' (T₁ ⇒ T₂) t t′ tp S r = let (_ , h′ , Ri) = R⇒-match r in
   R⇒ tp (step-preserves-halting S .snd h′)
-     (λ t″ R₁ → ▹map² (λ x → step-preserves-R' T₂ (t · t″) (t′ · t″)
-                                (tp ⊢· R-typable-empty T₁ t″ x) (ξ-·₁ S))
+     (λ t″ R₁ → map²ᵖ (▹map² ((λ x → step-preserves-R' T₂ (t · t″) (t′ · t″)
+                                   (tp ⊢· R-typable-empty T₁ t″ x) (ξ-·₁ S))))
                        R₁ (Ri t″ R₁))
 step-preserves-R'  𝟙        t t′ tp S r = let (_ , h′) = R𝟙-match r in
   R𝟙 tp (step-preserves-halting S .snd h′)
@@ -181,11 +182,12 @@ msubst-preserves-typing .((x , T) ∷ c) .((x , v) ∷ e) (V-cons {x} {T} {v} {c
 msubst-R : ∀ c e t T
          → (mupdate c ∅) ⊢ t ⦂ T
          → Inst c e
-         → R T (msubst e t)
+         → Part (R T (msubst e t))
 msubst-R c e .(` x)      T       (⊢` {x} l)              i =
   let lupc = mupdate-lookup c x T l
       t′ , P = instantiation-domains-match i lupc
     in
+  now $
   instantiation-R c e i x (msubst e (` x)) T lupc
     (P ∙ ap just (sym (ap (Data.Maybe.rec (` x) id) P)
                        ∙ sym (msubst-var e x (instantiation-env-closed c e i))))
@@ -197,30 +199,33 @@ msubst-R c e .(ƛ x ⇒ N) .(A ⇒ B) (⊢ƛ {x} {N} {A} {B} ty) i =
                     (∅ , x ⦂ A) N B
                     (weaken (go c x A) ty)
       in
-  R⇒ (subst (λ q → ∅ ⊢ q ⦂ A ⇒ B) (sym mabs) WT)
-     (value-halts (subst Value (sym mabs) V-ƛ))
-     (λ s Rs▹ →
-       ▹map {B = λ _ → R B (msubst e (ƛ x ⇒ N) · s)}
-         (λ Rs →
-             let v , P , Q = R-halts A s Rs
-                 Rv = multistep-preserves-R A s v P Rs
-               in
-             subst (λ q → R B (q · s)) (sym mabs) $
-             multistep-preserves-R' B
-               ((ƛ x ⇒ msubst (drp x e) N) · s)
-               (msubst ((x , v) ∷ e) N)
-               (WT ⊢· (R-typable-empty A s Rs))
-               (multistep-appr (ƛ x ⇒ msubst (drp x e) N) s v V-ƛ P
-                                —↠∘
-                               (((ƛ x ⇒ msubst (drp x e) N) · v)
-                                    —→⟨  subst (λ q → (ƛ x ⇒ msubst (drp x e) N) · v —→ q)
-                                               (sym (subst-msubst e x v N (∅⊢-closed (R-typable-empty A v Rv))
-                                                                          (instantiation-env-closed c e i)))
-                                               (β-ƛ Q) ⟩
-                                      (msubst e (N [ x := v ]) ∎ᵣ)))
-               (msubst-R ((x , A) ∷ c) ((x , v) ∷ e) N B ty (V-cons Q Rv i))
-         )
-         Rs▹)
+   now $
+   R⇒ (subst (λ q → ∅ ⊢ q ⦂ A ⇒ B) (sym mabs) WT)
+      (value-halts (subst Value (sym mabs) V-ƛ))
+      (λ s Rp → Rp >>=ᵖ λ R▹ →
+         ▹Part $
+         ▹map (λ Rs →
+               let v , P , Q = R-halts A s Rs
+                   Rv = multistep-preserves-R A s v P Rs
+                in
+                mapᵖ (λ R2 →
+                       subst (λ q → R B (q · s)) (sym mabs) $
+                       multistep-preserves-R' B
+                         ((ƛ x ⇒ msubst (drp x e) N) · s)
+                         (msubst ((x , v) ∷ e) N)
+                         (WT ⊢· (R-typable-empty A s Rs))
+                         (multistep-appr (ƛ x ⇒ msubst (drp x e) N) s v V-ƛ P
+                                          —↠∘
+                                         (((ƛ x ⇒ msubst (drp x e) N) · v)
+                                              —→⟨  subst (λ q → (ƛ x ⇒ msubst (drp x e) N) · v —→ q)
+                                                         (sym $ subst-msubst e x v N
+                                                                  (∅⊢-closed (R-typable-empty A v Rv))
+                                                                  (instantiation-env-closed c e i))
+                                                         (β-ƛ Q) ⟩
+                                                (msubst e (N [ x := v ]) ∎ᵣ)))
+                          R2)
+                     (msubst-R ((x , A) ∷ c) ((x , v) ∷ e) N B ty (V-cons Q Rv i)))
+              R▹)
   where
   go : ∀ c x A → (mupdate c ∅ , x ⦂ A) ⊆ mupdate (drp x c) (∅ , x ⦂ A)
   go []            x A  T  i  l = l
@@ -230,12 +235,13 @@ msubst-R c e .(ƛ x ⇒ N) .(A ⇒ B) (⊢ƛ {x} {N} {A} {B} ty) i =
   go ((y , p) ∷ c) x A .p .y (there _    here)         | no ctra = here
   go ((y , p) ∷ c) x A  T  i (there i≠x (there i≠y l)) | no ctra = there i≠y (go c x A T i (there i≠x l))
 msubst-R c e .(L · M)    T       (_⊢·_ {L} {M} {A} ty₁ ty₂) i =
-  let (_ , _ , R1→) = R⇒-match (msubst-R c e L (A ⇒ T) ty₁ i)
-      R▹ = R1→ (msubst e M) (next (msubst-R c e M A ty₂ i))
-    in
-  subst (R T) (sym $ msubst-app e L M) {!!}
+  (msubst-R c e L (A ⇒ T) ty₁ i) >>=ᵖ λ R1 →
+  let (_ , _ , R1→) = R⇒-match R1 in
+  (msubst-R c e M A ty₂ i) >>=ᵖ λ R2 →
+  let Rapp = R1→ (msubst e M) (now (next R2)) in
+  later (Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp)
 
 normalization : ∀ t T
               → ∅ ⊢ t ⦂ T
-              → halts t
-normalization t T ty = R-halts T t (msubst-R [] [] t T ty V-nil)
+              → Part (halts t)
+normalization t T ty = mapᵖ (R-halts T t) (msubst-R [] [] t T ty V-nil)
