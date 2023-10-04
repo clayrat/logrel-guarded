@@ -32,21 +32,18 @@ data R : Ty → Term → 𝒰 where
      → R (T₁ ⇒ T₂) t
 -}
 
+R-case : (Ty → Term → ▹ 𝒰) → Ty → Term → 𝒰
+R-case R▹ (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
+                      × halts t
+                      × (∀ s → ▸ (R▹ T₁ s) → ▸ (R▹ T₂ (t · s)))
+R-case R▹  𝟙        t = (∅ ⊢ t ⦂ 𝟙)
+                      × halts t
+
 R-body : ▹ (Ty → Term → 𝒰) → Ty → Term → 𝒰
-R-body R▹ (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
-                      × halts t
-                      × (∀ s → ▸ (R▹ ⊛ next T₁ ⊛ next s) → ▸ (R▹ ⊛ next T₂ ⊛ next (t · s)))
-R-body R▹  𝟙        t = (∅ ⊢ t ⦂ 𝟙)
-                      × halts t
+R-body f = R-case (λ T t → f ⊛ next T ⊛ next t)
 
 R : Ty → Term → 𝒰
 R = fix R-body
-
-roll-R : (T : Ty) → (t : Term) → ▸ (dfix R-body ⊛ next T ⊛ next t) → ▹ R T t
-roll-R T t = subst (λ q → ▸ (q ⊛ next T ⊛ next t)) (pfix R-body)
-
-unroll-R : (T : Ty) → (t : Term) → ▹ R T t → ▸ (dfix R-body ⊛ next T ⊛ next t)
-unroll-R T t = subst (λ q → ▸ (q ⊛ next T ⊛ next t)) (sym $ pfix R-body)
 
 -- constructors
 
@@ -60,7 +57,9 @@ R⇒ : ∀ {T₁ T₂ t}
    → (∀ s → ▹ R T₁ s → ▹ R T₂ (t · s))
    → R (T₁ ⇒ T₂) t
 R⇒ {T₁} {T₂} {t} ty h r =
-  ty , h , λ s R₁ → unroll-R T₂ (t · s) $ r s $ roll-R T₁ s R₁
+  ty , h , λ s → transport (λ i → (▹[ α ] (pfix R-body (~ i) α T₁ s))
+                                → (▹[ α ] (pfix R-body (~ i) α T₂ (t · s))))
+                           (r s)
 
 -- destructors
 
@@ -73,7 +72,9 @@ R⇒-match : ∀ {T₁ T₂ t}
          → R (T₁ ⇒ T₂) t
          → (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → ▹ R T₁ s → ▹ R T₂ (t · s))
 R⇒-match {T₁} {T₂} {t} (ty , h , r) =
-  ty , h , λ s R₁ → roll-R T₂ (t · s) $ r s $ unroll-R T₁ s R₁
+  ty , h , λ s → transport (λ i → (▹[ α ] (pfix R-body i α T₁ s))
+                                → (▹[ α ] (pfix R-body i α T₂ (t · s))))
+                           (r s)
 
 -- projections
 
@@ -233,8 +234,8 @@ msubst-R c e .(L · M)    T       (_⊢·_ {L} {M} {A} ty₁ ty₂) i =
       R▹ = R1→ (msubst e M) (next (msubst-R c e M A ty₂ i))
     in
   subst (R T) (sym $ msubst-app e L M) {!!}
+
 normalization : ∀ t T
               → ∅ ⊢ t ⦂ T
               → halts t
 normalization t T ty = R-halts T t (msubst-R [] [] t T ty V-nil)
-
