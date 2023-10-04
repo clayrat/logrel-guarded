@@ -125,7 +125,7 @@ msubst-R c e .(` x)      T       (⊢` {x} l)              i =
       t′ , P = instantiation-domains-match i lupc
     in
   instantiation-R c e i x (msubst e (` x)) T lupc
-    (P ∙ ap just (sym (ap (Data.Maybe.rec (` x) id) P)
+    (P ∙ ap just (sym (ap (extract (` x)) P)
                        ∙ sym (msubst-var e x (instantiation-env-closed c e i))))
 msubst-R c e .(ƛ x ⇒ N) .(A ⇒ B) (⊢ƛ {x} {N} {A} {B} ty) i =
   let mabs = msubst-abs e x N
