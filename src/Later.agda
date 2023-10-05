@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module LaterG where
+module Later where
 
 open import Agda.Primitive.Cubical using ( primHComp ; primComp )
 open import Prelude

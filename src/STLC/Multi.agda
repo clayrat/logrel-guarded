@@ -3,12 +3,12 @@ module STLC.Multi where
 open import Prelude
 open import Data.Empty
 open import Data.Dec
-open import Data.Maybe renaming (rec to mrec)
+open import Data.Maybe
 open import Data.List
+open import Data.List.Correspondences.Unary.All
 open import Data.String
 
 open import Interlude
-open import All
 open import STLC.Term
 open import STLC.Ty
 

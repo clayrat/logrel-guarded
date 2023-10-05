@@ -5,9 +5,9 @@ open import Data.Empty
 open import Data.Dec
 open import Data.String
 open import Data.Maybe
+open import Data.List.Correspondences.Unary.All
 
 open import Interlude
-open import All
 open import STLC.Term
 open import STLC.Ty
 open import STLC.Multi

@@ -1,11 +1,11 @@
 {-# OPTIONS --guarded #-}
-module PartialG where
+module Guarded.Partial where
 
 open import Prelude
 open import Data.Bool
 open import Data.Maybe
 open import Data.Sum
-open import LaterG
+open import Later
 
 private variable
   A B C : 𝒰
