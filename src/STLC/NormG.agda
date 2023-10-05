@@ -183,6 +183,11 @@ msubst-R : ∀ c e t T
          → (mupdate c ∅) ⊢ t ⦂ T
          → Inst c e
          → Part (R T (msubst e t))
+msubst-R c e .𝓉𝓉         T        ⊢𝓉𝓉                    i =
+  let mu = sym $ msubst-unit e in
+  now $
+  R𝟙 (subst (λ q → ∅ ⊢ q ⦂ 𝟙) mu ⊢𝓉𝓉)
+     (𝓉𝓉 , subst (_—↠ 𝓉𝓉) mu (𝓉𝓉 ∎ᵣ) , V-𝓉𝓉)
 msubst-R c e .(` x)      T       (⊢` {x} l)              i =
   let lupc = mupdate-lookup c x T l
       t′ , P = instantiation-domains-match i lupc

@@ -25,6 +25,7 @@ infix  9 _[_:=_]
 -- terms
 
 data Term : 𝒰 where
+  𝓉𝓉   : Term
   `_   : Id → Term
   ƛ_⇒_ : Id → Term → Term
   _·_  : Term → Term → Term
@@ -34,6 +35,7 @@ data Term : 𝒰 where
 -- substitution
 
 _[_:=_] : Term → Id → Term → Term
+𝓉𝓉 [ y := V ]      = 𝓉𝓉
 (` x) [ y := V ] with x ≟ y
 ... | yes _        = V
 ... | no  _        = ` x
@@ -45,7 +47,8 @@ _[_:=_] : Term → Id → Term → Term
 -- values
 
 data Value : Term → 𝒰 where
-  V-ƛ : ∀ {x N} → Value (ƛ x ⇒ N)
+  V-ƛ  : ∀ {x N} → Value (ƛ x ⇒ N)
+  V-𝓉𝓉 : Value 𝓉𝓉
 
 -- reduction step
 
@@ -162,6 +165,7 @@ step-preserves-halting {t} {t′} S =
 
 vacuous-subst : ∀ t x
               → ¬ afi x t → ∀ t′ → t [ x := t′ ] ＝ t
+vacuous-subst 𝓉𝓉        x nafi t′ = refl
 vacuous-subst (` y)     x nafi t′ with y ≟ x
 ... | yes prf = absurd (nafi (subst (λ q → afi x (` q)) (sym prf) afi-var))
 ... | no ctra = refl
@@ -195,6 +199,7 @@ duplicate-subst t x v w cv = vacuous-subst (t [ x := v ]) x (subst-not-afi t x v
 swap-subst : ∀ t x y v w
            → x ≠ y → closed v → closed w
            → t [ x := v ] [ y := w ] ＝ t [ y := w ] [ x := v ]
+swap-subst 𝓉𝓉        x y v w x≠y cv cw = refl
 swap-subst (` z)     x y v w x≠y cv cw with z ≟ x | z ≟ y
 swap-subst (` z)     x y v w x≠y cv cw | yes zx | yes zy  = absurd (x≠y (sym zx ∙ zy))
 swap-subst (` z)     x y v w x≠y cv cw | yes zx | no z≠y with z ≟ x -- AARGH

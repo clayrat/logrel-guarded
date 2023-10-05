@@ -40,6 +40,10 @@ subst-msubst ((y , p) ∷ env) x v t cv (cp ∷ ce) with x ≟ y
 ... | no ctra = ap (msubst env) (swap-subst t x y v p ctra cv cp)
               ∙ subst-msubst env x v (t [ y := p ]) cv ce
 
+msubst-unit : ∀ ss → msubst ss 𝓉𝓉 ＝ 𝓉𝓉
+msubst-unit []       = refl
+msubst-unit (x ∷ ss) = msubst-unit ss
+
 msubst-var : ∀ ss x
            → closed-env ss
            → msubst ss (` x) ＝ extract (` x) (lup x ss)

@@ -82,6 +82,11 @@ _⊆_ Γ₁ Γ₂ = ∀ t i → Γ₁ ∋ i ⦂ t → Γ₂ ∋ i ⦂ t
 
 data _⊢_⦂_ : Context → Term → Ty → 𝒰 where
 
+  -- Unit
+  ⊢𝓉𝓉 : ∀ {Γ}
+      -----------
+    → Γ ⊢ 𝓉𝓉 ⦂ 𝟙
+
   -- Axiom
   ⊢` : ∀ {Γ x A}
     → Γ ∋ x ⦂ A
@@ -104,6 +109,7 @@ data _⊢_⦂_ : Context → Term → Ty → 𝒰 where
 -- weakening / renaming
 
 weaken : ∀ {Γ₁ Γ₂ t T} → Γ₁ ⊆ Γ₂ → Γ₁ ⊢ t ⦂ T → Γ₂ ⊢ t ⦂ T
+weaken {t = .𝓉𝓉}   {T}                 sub  ⊢𝓉𝓉                    = ⊢𝓉𝓉
 weaken {t = .(` x)}   {T}              sub (⊢` {x} p)              =
   ⊢` (sub T x p)
 weaken {t = .(ƛ x ⇒ N)} {T = .(A ⇒ B)} sub (⊢ƛ {x} {N} {A} {B} ⊢N) =
@@ -134,6 +140,7 @@ subst-ty : ∀ {Γ x N V A B}
   → Γ , x ⦂ A ⊢ N ⦂ B
     --------------------
   → Γ ⊢ N [ x := V ] ⦂ B
+subst-ty                 ⊢V  ⊢𝓉𝓉 = ⊢𝓉𝓉
 subst-ty {Γ} {x = y}     ⊢V (⊢` {x} here) with x ≟ y
 ... | yes _   = weaken-∅ Γ ⊢V
 ... | no  x≠y = absurd (x≠y refl)
