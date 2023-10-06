@@ -35,8 +35,8 @@ data R : Ty → Term → 𝒰 where
   R𝕩 : ∀ {T₁ T₂ t}
      → ∅ ⊢ t ⦂ T₁ 𝕩 T₂
      → halts t
-     → Part (▹ R T₁ (t ⇀₁))
-     → Part (▹ R T₂ (t ⇀₂))
+     → ▹ R T₁ (t ⇀₁)
+     → ▹ R T₂ (t ⇀₂)
      → R (T₁ 𝕩 T₂) t
 -}
 
@@ -48,8 +48,8 @@ R-case R▹ (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
                       × (∀ s → Part (▸ (R▹ T₁ s)) → Part (▸ (R▹ T₂ (t · s))))
 R-case R▹ (T₁ 𝕩 T₂) t = (∅ ⊢ t ⦂ T₁ 𝕩 T₂)
                       × halts t
-                      × Part (▸ (R▹ T₁ (t ⇀₁)))
-                      × Part (▸ (R▹ T₂ (t ⇀₂)))
+                      × ▸ (R▹ T₁ (t ⇀₁))
+                      × ▸ (R▹ T₂ (t ⇀₂))
 
 R-body : ▹ (Ty → Term → 𝒰) → Ty → Term → 𝒰
 R-body f = R-case (λ T t → f ⊛ next T ⊛ next t)
@@ -76,13 +76,13 @@ R⇒ {T₁} {T₂} {t} ⊢t h r =
 R𝕩 : ∀ {T₁ T₂ t}
    → ∅ ⊢ t ⦂ T₁ 𝕩 T₂
    → halts t
-   → Part (▹ R T₁ (t ⇀₁))
-   → Part (▹ R T₂ (t ⇀₂))
+   → ▹ R T₁ (t ⇀₁)
+   → ▹ R T₂ (t ⇀₂)
    → R (T₁ 𝕩 T₂) t
 R𝕩 {T₁} {T₂} {t} ⊢t h r1 r2 =
   ⊢t , h
-  , transport (λ i → Part (▹[ α ] (pfix R-body (~ i) α T₁ (t ⇀₁)))) r1
-  , transport (λ i → Part (▹[ α ] (pfix R-body (~ i) α T₂ (t ⇀₂)))) r2
+  , transport (λ i → ▹[ α ] (pfix R-body (~ i) α T₁ (t ⇀₁))) r1
+  , transport (λ i → ▹[ α ] (pfix R-body (~ i) α T₂ (t ⇀₂))) r2
 
 -- destructors
 
@@ -96,16 +96,16 @@ R⇒-match : ∀ {T₁ T₂ t}
          → (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → Part (▹ R T₁ s) → Part (▹ R T₂ (t · s)))
 R⇒-match {T₁} {T₂} {t} (⊢t , h , r) =
   ⊢t , h , λ s → transport (λ i → Part (▹[ α ] (pfix R-body i α T₁ s))
-                                → Part (▹[ α ] (pfix R-body i α T₂ (t · s))))
-                           (r s)
+                                 → Part (▹[ α ] (pfix R-body i α T₂ (t · s))))
+                            (r s)
 
 R𝕩-match : ∀ {T₁ T₂ t}
          → R (T₁ 𝕩 T₂) t
-         → (∅ ⊢ t ⦂ T₁ 𝕩 T₂) × halts t × Part (▹ (R T₁ (t ⇀₁))) × Part (▹ (R T₂ (t ⇀₂)))
+         → (∅ ⊢ t ⦂ T₁ 𝕩 T₂) × halts t × ▹ R T₁ (t ⇀₁) × ▹ R T₂ (t ⇀₂)
 R𝕩-match {T₁} {T₂} {t} (⊢t , h , r1 , r2) =
   ⊢t , h
-  , transport (λ i → Part (▹[ α ] (pfix R-body i α T₁ (t ⇀₁)))) r1
-  , transport (λ i → Part (▹[ α ] (pfix R-body i α T₂ (t ⇀₂)))) r2
+  , transport (λ i → ▹[ α ] (pfix R-body i α T₁ (t ⇀₁))) r1
+  , transport (λ i → ▹[ α ] (pfix R-body i α T₂ (t ⇀₂))) r2
 
 -- projections
 
@@ -130,8 +130,8 @@ step-preserves-R {T = T₁ ⇒ T₂} S r = let tp , h , Ri = R⇒-match r in
      (λ t″ R₁ → mapᵖ (▹map (step-preserves-R (ξ-·₁ S))) (Ri t″ R₁))
 step-preserves-R {T = T₁ 𝕩 T₂} S r = let tp , h , Rp1 , Rp2 = R𝕩-match r in
   R𝕩 (preserve tp S) (step-preserves-halting S .fst h)
-     (mapᵖ (▹map (step-preserves-R (ξ-⇀₁ S))) Rp1)
-     (mapᵖ (▹map (step-preserves-R (ξ-⇀₂ S))) Rp2)
+     (▹map (step-preserves-R (ξ-⇀₁ S)) Rp1)
+     (▹map (step-preserves-R (ξ-⇀₂ S)) Rp2)
 
 multistep-preserves-R : ∀ {T t t′}
                       → (t —↠ t′) → R T t → R T t′
@@ -149,8 +149,8 @@ step-preserves-R' {T = T₁ ⇒ T₂} {t} {t′} tp S r = let _ , h′ , Ri = R�
                    R₁ (Ri t″ R₁))
 step-preserves-R' {T = T₁ 𝕩 T₂} {t} {t′} tp S r = let _ , h′ , Rp1 , Rp2 = R𝕩-match r in
   R𝕩 tp (step-preserves-halting S .snd h′)
-     (mapᵖ (▹map (step-preserves-R' (⊢⇀₁ tp) (ξ-⇀₁ S))) Rp1)
-     (mapᵖ (▹map (step-preserves-R' (⊢⇀₂ tp) (ξ-⇀₂ S))) Rp2)
+     (▹map (step-preserves-R' (⊢⇀₁ tp) (ξ-⇀₁ S)) Rp1)
+     (▹map (step-preserves-R' (⊢⇀₂ tp) (ξ-⇀₂ S)) Rp2)
 
 multistep-preserves-R' : ∀ {T t t′}
                        → ∅ ⊢ t ⦂ T → (t —↠ t′) → R T t′ → R T t
@@ -218,6 +218,7 @@ msubst-R : ∀ {c e t T}
          → mupdate c ∅ ⊢ t ⦂ T
          → Inst c e
          → Part (R T (msubst e t))
+-- core
 msubst-R         {t = .(` x)}            (⊢` {x} l)                       i =
   let lupc = mupdate-lookup l
       t′ , P = instantiation-domains-match i lupc
@@ -263,6 +264,7 @@ msubst-R     {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)       
   msubst-R ⊢M i >>=ᵖ λ R2 →
   let Rapp = R1→ (msubst e M) (now (next R2)) in
   later $ Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp
+-- booleans
 msubst-R     {e}                          ⊢𝓉                         i =
   let mt = sym $ msubst-true e in
   now $ R𝟚 (subst (λ q → ∅ ⊢ q ⦂ 𝟚) mt ⊢𝓉)
@@ -289,10 +291,11 @@ msubst-R     {e} {.(⁇ L ↑ M ↓ N)}   {T}       (⊢⁇ {L} {M} {N} ⊢L ⊢
             (multistep-test0 S —↠+ β-𝒻))
          (msubst-R ⊢N i)
   go (⊢mL , .(〈 _ ⹁ _ 〉) , S , V-〈〉 _ _) = absurd (¬〈〉⦂𝟚 $ multi-preserve ⊢mL S)
+-- pairs
 msubst-R     {e} {.(〈 L ⹁ M 〉)}     {.(A 𝕩 B)} (⊢〈〉 {L} {M} {A} {B} ⊢L ⊢M) i =
   let mp = sym $ msubst-pair e L M
       ⊢mLM = ⊢〈〉 (msubst-preserves-typing i ⊢L) (msubst-preserves-typing i ⊢M)
-     in
+    in
   msubst-R ⊢L i >>=ᵖ λ R1 →
   msubst-R ⊢M i >>=ᵖ λ R2 →
   let t1 , s1 , v1 = R-halts R1
@@ -302,20 +305,20 @@ msubst-R     {e} {.(〈 L ⹁ M 〉)}     {.(A 𝕩 B)} (⊢〈〉 {L} {M} {A} {
   now $ R𝕩 (subst (λ q → ∅ ⊢ q ⦂ A 𝕩 B) mp ⊢mLM)
            (subst halts mp $
              〈 t1 ⹁ t2 〉 , s12 , V-〈〉 v1 v2)
-           (now $ next $ subst (λ q → R A (q ⇀₁)) mp $
+           (next $ subst (λ q → R A (q ⇀₁)) mp $
               multistep-preserves-R' (⊢⇀₁ ⊢mLM) (multistep-fst s12 —↠+ β-〈〉₁ v1 v2) $
               multistep-preserves-R s1 R1)
-           (now $ next $ (subst (λ q → R B (q ⇀₂)) mp $
+           (next $ (subst (λ q → R B (q ⇀₂)) mp $
               multistep-preserves-R' (⊢⇀₂ ⊢mLM) (multistep-snd s12 —↠+ β-〈〉₂ v1 v2) $
               multistep-preserves-R s2 R2))
 msubst-R     {e} {.(L ⇀₁)}         {T = A}  (⊢⇀₁ {L} {B} ⊢L)              i =
   msubst-R ⊢L i >>=ᵖ λ Rl →
   let _ , _ , Ra , _ = R𝕩-match Rl in
-  later (Part▹ (subst (λ q → ▹ R A q) (sym $ msubst-fst e L)) Ra)
+  later (▹map (now ∘ subst (R A) (sym $ msubst-fst e L)) Ra)
 msubst-R     {e} {.(L ⇀₂)}         {T = B}  (⊢⇀₂ {L} {A} ⊢L)              i =
   msubst-R ⊢L i >>=ᵖ λ Rl →
   let _ , _ , _ , Rb = R𝕩-match Rl in
-  later (Part▹ (subst (λ q → ▹ R B q) (sym $ msubst-snd e L)) Rb)
+  later (▹map (now ∘ subst (R B) (sym $ msubst-snd e L)) Rb)
 
 normalization : ∀ {t T}
               → ∅ ⊢ t ⦂ T
