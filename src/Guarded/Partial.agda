@@ -75,9 +75,9 @@ Part▹-body : (A → ▹ B) → ▹ (Part A  → ▹ (Part B)) → Part A → �
 Part▹-body f P▹ (now a)    = ▹map now (f a)
 Part▹-body f P▹ (later p▹) = ▹map later (P▹ ⊛ p▹)
 
-Part▹ : (A → ▹ B) → Part A → ▹ (Part B)
+Part▹ : (A → ▹ B) → Part A → ▹ Part B
 Part▹ f = fix (Part▹-body f)
 
 -- adds an extra step
-▹Part : ▹ (Part A) → Part (▹ A)
-▹Part x = later (▹map (mapᵖ next) x)
+▹Part : ▹ Part A → Part (▹ A)
+▹Part = later ∘ ▹map (mapᵖ next) 
