@@ -234,11 +234,11 @@ msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)      
       in
   now $ R⇒ (subst (λ q → ∅ ⊢ q ⦂ A ⇒ B) (sym mabs) WT)
            (value-halts (subst Value (sym mabs) V-ƛ))
-           (λ s → ▹Part+ ∘ ▹map λ Rs →
+           (λ s → later ∘ ▹map λ Rs →
                   let v , P , Q  = R-halts Rs
                       Rv = multistep-preserves-R P Rs
                     in
-                  mapᵖ (subst (λ q → R B (q · s)) (sym mabs) ∘
+                  mapᵖ (next ∘ subst (λ q → R B (q · s)) (sym mabs) ∘
                         multistep-preserves-R'
                           (WT ⊢· R-typable-empty Rs)
                           (multistep-appr V-ƛ P
