@@ -153,23 +153,57 @@ begin_ : ∀ {M N}
   → M —↠ N
 begin M—↠N = M—↠N
 
+-- lifting
+^—↠ : ∀ {L M} → L —→ M → L —↠ M
+^—↠ {L} {M} LM = L —→⟨ LM ⟩ M ∎ᵣ
+
+-- concatenating
 _—↠∘_ : ∀ {L M N} → L —↠ M → M —↠ N → L —↠ N
 (_ ∎ᵣ)            —↠∘ LN = LN
 (L₀ —→⟨ L₀L ⟩ LM) —↠∘ MN = L₀ —→⟨ L₀L ⟩ (LM —↠∘ MN)
 
--- congruence on multistep
-multistep-appr : ∀ v t t′
-               → Value v
-               → (t —↠ t′)
-               → (v · t) —↠ (v · t′)
-multistep-appr v t .t  V (.t ∎ᵣ)        = v · t ∎ᵣ
-multistep-appr v t  t′ V (.t —→⟨ T ⟩ S) = v · t —→⟨ ξ-·₂ V T ⟩ multistep-appr _ _ _ V S
+-- appending
+_—↠+_ : ∀ {L M N} → L —↠ M → M —→ N → L —↠ N
+LM —↠+ MN = LM —↠∘ (^—↠ MN)
 
-multistep-test0 : ∀ L L′ M N
-                → (L —↠ L′)
+-- congruence on multistep
+multistep-appr : ∀ {V M M′}
+               → Value V
+               → M —↠ M′
+               → (V · M) —↠ (V · M′)
+multistep-appr {V} {M} {.M} VV (.M ∎ᵣ)         = V · M ∎ᵣ
+multistep-appr {V} {M} {M′} VV (.M —→⟨ S ⟩ MS) = V · M —→⟨ ξ-·₂ VV S ⟩ multistep-appr VV MS
+
+multistep-test0 : ∀ {L L′ M N}
+                → L —↠ L′
                 → ⁇ L ↑ M ↓ N —↠ ⁇ L′ ↑ M ↓ N
-multistep-test0 L .L M N (.L ∎ᵣ)        = ⁇ L ↑ M ↓ N ∎ᵣ
-multistep-test0 L L′ M N (.L —→⟨ T ⟩ S) = ⁇ L ↑ M ↓ N —→⟨ ξ-⁇ T ⟩ multistep-test0 _ L′ M N S
+multistep-test0 {L} {.L} {M} {N} (.L ∎ᵣ)         = ⁇ L ↑ M ↓ N ∎ᵣ
+multistep-test0 {L} {L′} {M} {N} (.L —→⟨ S ⟩ MS) = ⁇ L ↑ M ↓ N —→⟨ ξ-⁇ S ⟩ multistep-test0 MS
+
+multistep-pairl : ∀ {L L′ M}
+                → L —↠ L′
+                → 〈 L ⹁ M 〉 —↠ 〈 L′ ⹁ M 〉
+multistep-pairl {L} {.L} {M} (.L ∎ᵣ)         = 〈 L ⹁ M 〉 ∎ᵣ
+multistep-pairl {L} {L′} {M} (.L —→⟨ S ⟩ MS) = 〈 L ⹁ M 〉 —→⟨ ξ-〈〉₁ S ⟩ multistep-pairl MS
+
+multistep-pairr : ∀ {L M M′}
+                → Value L
+                → M —↠ M′
+                → 〈 L ⹁ M 〉 —↠ 〈 L ⹁ M′ 〉
+multistep-pairr {L} {M} {.M} VL (.M ∎ᵣ)         = 〈 L ⹁ M 〉 ∎ᵣ
+multistep-pairr {L} {M} {M′} VL (.M —→⟨ S ⟩ MS) = 〈 L ⹁ M 〉 —→⟨ ξ-〈〉₂ VL S ⟩ multistep-pairr VL MS
+
+multistep-fst : ∀ {L L′}
+              → L —↠ L′
+              → (L ⇀₁) —↠ (L′ ⇀₁)
+multistep-fst {L} {.L} (.L ∎ᵣ)         = L ⇀₁ ∎ᵣ
+multistep-fst {L} {L′} (.L —→⟨ S ⟩ MS) = L ⇀₁ —→⟨ ξ-⇀₁ S ⟩ multistep-fst MS
+
+multistep-snd : ∀ {L L′}
+              → L —↠ L′
+              → (L ⇀₂) —↠ (L′ ⇀₂)
+multistep-snd {L} {.L} (.L ∎ᵣ)         = L ⇀₂ ∎ᵣ
+multistep-snd {L} {L′} (.L —→⟨ S ⟩ MS) = L ⇀₂ —→⟨ ξ-⇀₂ S ⟩ multistep-snd MS
 
 -- normal form
 
@@ -301,28 +335,28 @@ vacuous-subst (t ⇀₁)          x nafi t′ =
 vacuous-subst (t ⇀₂)          x nafi t′ =
   ap _⇀₂ (vacuous-subst t x (nafi ∘ afi-snd) t′)
 
-subst-closed : ∀ t
+subst-closed : ∀ {t}
              → closed t → ∀ x t′ → t [ x := t′ ] ＝ t
-subst-closed t c x t′ = vacuous-subst t x (c x) t′
+subst-closed {t} c x t′ = vacuous-subst t x (c x) t′
 
 subst-not-afi : ∀ t x v
               → closed v → ¬ afi x (t [ x := v ])
 subst-not-afi (` y)           x v cv a with y ≟ x
-...                                     | yes _   = cv x a
+...                                          | yes _   = cv x a
 subst-not-afi (` y)          .y v cv afi-var | no ctra = ctra refl
 subst-not-afi (ƛ y ⇒ t)       x v cv a with y ≟ x
 subst-not-afi (ƛ y ⇒ t)       x v cv (afi-abs x≠y a) | yes prf = x≠y (sym prf)
 subst-not-afi (ƛ y ⇒ t)       x v cv (afi-abs x≠y a) | no _    =
   subst-not-afi t x v cv a
-subst-not-afi (t₁ · t₂)       x v cv (afi-appl a) = subst-not-afi t₁ x v cv a
-subst-not-afi (t₁ · t₂)       x v cv (afi-appr a) = subst-not-afi t₂ x v cv a
+subst-not-afi (t₁ · t₂)       x v cv (afi-appl a)  = subst-not-afi t₁ x v cv a
+subst-not-afi (t₁ · t₂)       x v cv (afi-appr a)  = subst-not-afi t₂ x v cv a
 subst-not-afi (⁇ t ↑ t₁ ↓ t₂) x v cv (afi-test0 a) = subst-not-afi t x v cv a
 subst-not-afi (⁇ t ↑ t₁ ↓ t₂) x v cv (afi-test1 a) = subst-not-afi t₁ x v cv a
 subst-not-afi (⁇ t ↑ t₁ ↓ t₂) x v cv (afi-test2 a) = subst-not-afi t₂ x v cv a
 subst-not-afi 〈 t₁ ⹁ t₂ 〉       x v cv (afi-pairl a) = subst-not-afi t₁ x v cv a
 subst-not-afi 〈 t₁ ⹁ t₂ 〉       x v cv (afi-pairr a) = subst-not-afi t₂ x v cv a
-subst-not-afi (t ⇀₁)          x v cv (afi-fst a) = subst-not-afi t x v cv a
-subst-not-afi (t ⇀₂)          x v cv (afi-snd a) = subst-not-afi t x v cv a
+subst-not-afi (t ⇀₁)          x v cv (afi-fst a)   = subst-not-afi t x v cv a
+subst-not-afi (t ⇀₂)          x v cv (afi-snd a)   = subst-not-afi t x v cv a
 
 duplicate-subst : ∀ t x v w
                 → closed v
@@ -336,10 +370,10 @@ swap-subst : ∀ t x y v w
 swap-subst (` z)           x y v w x≠y cv cw with z ≟ x | z ≟ y
 swap-subst (` z)           x y v w x≠y cv cw | yes zx | yes zy  = absurd (x≠y (sym zx ∙ zy))
 swap-subst (` z)           x y v w x≠y cv cw | yes zx | no z≠y with z ≟ x -- AARGH
-swap-subst (` z)           x y v w x≠y cv cw | yes zx | no z≠y | yes _ = subst-closed v cv y w
+swap-subst (` z)           x y v w x≠y cv cw | yes zx | no z≠y | yes _ = subst-closed cv y w
 swap-subst (` z)           x y v w x≠y cv cw | yes zx | no z≠y | no ctra = absurd (ctra zx)
 swap-subst (` z)           x y v w x≠y cv cw | no z≠x | yes zy with z ≟ y -- AARGH
-swap-subst (` z)           x y v w x≠y cv cw | no z≠x | yes zy | yes _ = sym (subst-closed w cw x v)
+swap-subst (` z)           x y v w x≠y cv cw | no z≠x | yes zy | yes _ = sym (subst-closed cw x v)
 swap-subst (` z)           x y v w x≠y cv cw | no z≠x | yes zy | no ctra = absurd (ctra zy)
 swap-subst (` z)           x y v w x≠y cv cw | no z≠x | no z≠y with z ≟ x  -- AAAARGGH
 swap-subst (` z)           x y v w x≠y cv cw | no z≠x | no z≠y | yes prf = absurd (z≠x prf)
