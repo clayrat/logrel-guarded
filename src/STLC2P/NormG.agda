@@ -226,7 +226,7 @@ msubst-R         {t = .(` x)}            (⊢` {x} l)                       i =
   now $ instantiation-R i x lupc
     (P ∙ ap just (sym (ap (extract (` x)) P)
                   ∙ sym (msubst-var (instantiation-env-closed i) x)))
-msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)         i =
+msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)          i =
   let mabs = msubst-abs e x N
       WT : ∅ ⊢ ƛ x ⇒ msubst (drp x e) N ⦂ A ⇒ B
       WT = ⊢ƛ $ msubst-preserves-typing (instantiation-drop i x)
@@ -265,11 +265,11 @@ msubst-R     {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)       
     in
   later $ Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp
 ------ booleans ------
-msubst-R     {e}                          ⊢𝓉                         i =
+msubst-R     {e}                          ⊢𝓉                               i =
   let mt = sym $ msubst-true e in
   now $ R𝟚 (subst (λ q → ∅ ⊢ q ⦂ 𝟚) mt ⊢𝓉)
            (subst halts mt $ value-halts V-𝓉)
-msubst-R     {e}                          ⊢𝒻                         i =
+msubst-R     {e}                          ⊢𝒻                              i =
   let mf = sym $ msubst-false e in
   now $ R𝟚 (subst (λ q → ∅ ⊢ q ⦂ 𝟚) mf ⊢𝒻)
            (subst halts mf $ value-halts V-𝒻)
