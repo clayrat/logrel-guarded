@@ -176,11 +176,11 @@ msubst-R {c} {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)       
 msubst-R {c} {e} {.𝓉}              {.𝟚}        ⊢𝓉                         i =
   let mt = sym $ msubst-true e in
     subst (λ q → ∅ ⊢ q ⦂ 𝟚) mt ⊢𝓉
-  , 𝓉 , subst (_—↠ 𝓉) mt (𝓉 ∎ᵣ) , V-𝓉
+  , (subst halts mt $ value-halts V-𝓉)
 msubst-R {c} {e} {.𝒻}             {.𝟚}        ⊢𝒻                         i =
   let mf = sym $ msubst-false e in
     subst (λ q → ∅ ⊢ q ⦂ 𝟚) mf ⊢𝒻
-  , 𝒻 , subst (_—↠ 𝒻) mf (𝒻 ∎ᵣ) , V-𝒻
+  , (subst halts mf $ value-halts V-𝒻)
 msubst-R {c} {e} {.(⁇ L ↑ M ↓ N)}   {T}       (⊢⁇ {L} {M} {N} ⊢L ⊢M ⊢N) i with msubst-R ⊢L i
 ... | ⊢mL , .(ƛ _ ⇒ _)  , S , V-ƛ      = absurd (¬ƛ⦂𝟚 $ multi-preserve ⊢mL S)
 ... | ⊢mL , .𝓉         , S , V-𝓉       =
