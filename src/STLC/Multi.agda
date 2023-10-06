@@ -21,36 +21,39 @@ msubst : Env → Term → Term
 msubst []             t = t
 msubst ((x , s) ∷ ss) t = msubst ss (t [ x := s ])
 
-msubst-closed : ∀ t → closed t → ∀ ss → msubst ss t ＝ t
-msubst-closed t ct []             = refl
-msubst-closed t ct ((y , s) ∷ ss) =
-  ap (msubst ss) (subst-closed t ct y s) ∙ msubst-closed t ct ss
+msubst-closed : ∀ {t}
+              → closed t → ∀ ss → msubst ss t ＝ t
+msubst-closed ct []             = refl
+msubst-closed ct ((y , s) ∷ ss) =
+  ap (msubst ss) (subst-closed ct y s) ∙ msubst-closed ct ss
 
 closed-env : (@0 e : Env) → 𝒰
 closed-env = All (closed ∘ snd)
 
-subst-msubst : ∀ env x v t
+subst-msubst : ∀ {env v}
              → closed v → closed-env env
+             → ∀ x t
              → msubst env (t [ x := v ]) ＝ (msubst (drp x env) t) [ x := v ]
-subst-msubst []              x v t cv []        = refl
-subst-msubst ((y , p) ∷ env) x v t cv (cp ∷ ce) with x ≟ y
+subst-msubst {env = []}        {v} cv []        x t = refl
+subst-msubst {((y , p) ∷ env)} {v} cv (cp ∷ ce) x t with x ≟ y
 ... | yes prf = ap (msubst env) (ap (λ q → t [ x := v ] [ q := p ]) (sym prf)
                                  ∙ duplicate-subst t x v p cv)
-              ∙ subst-msubst env x v t cv ce
+              ∙ subst-msubst cv ce x t
 ... | no ctra = ap (msubst env) (swap-subst t x y v p ctra cv cp)
-              ∙ subst-msubst env x v (t [ y := p ]) cv ce
+              ∙ subst-msubst cv ce x (t [ y := p ])
 
 msubst-unit : ∀ ss → msubst ss 𝓉𝓉 ＝ 𝓉𝓉
 msubst-unit []       = refl
 msubst-unit (x ∷ ss) = msubst-unit ss
 
-msubst-var : ∀ ss x
+msubst-var : ∀ {ss}
            → closed-env ss
+           → ∀ x
            → msubst ss (` x) ＝ extract (` x) (lup x ss)
-msubst-var []             x []         = refl
-msubst-var ((y , t) ∷ ss) x (ct ∷ css) with x ≟ y
-... | yes prf = msubst-closed t ct ss
-... | no ctra = msubst-var ss x css
+msubst-var {ss = []}        []         x = refl
+msubst-var {((y , t) ∷ ss)} (ct ∷ css) x with x ≟ y
+... | yes prf = msubst-closed ct ss
+... | no ctra = msubst-var css x
 
 msubst-abs : ∀ ss x t
            → msubst ss (ƛ x ⇒ t) ＝ ƛ x ⇒ msubst (drp x ss) t
@@ -74,12 +77,13 @@ mupdate : Tass → Context → Context
 mupdate []              Γ = Γ
 mupdate ((x , v) ∷ xts) Γ = (mupdate xts Γ) , x ⦂ v
 
-mupdate-lookup : ∀ c x T
+mupdate-lookup : ∀ {c x T}
                → mupdate c ∅ ∋ x ⦂ T
                → lup x c ＝ just T
-mupdate-lookup ((y , S) ∷ c) .y .S  here         with y ≟ y  -- wtf
+mupdate-lookup {((y , S) ∷ c)} {.y} {.S}  here         with y ≟ y  -- wtf
 ... | yes _   = refl
 ... | no ctra = absurd (ctra refl)
-mupdate-lookup ((y , S) ∷ c)  x  T (there x≠y l) with x ≟ y
+mupdate-lookup {((y , S) ∷ c)} {x}  {T}  (there x≠y l) with x ≟ y
 ... | yes prf = absurd (x≠y prf)
-... | no _    = mupdate-lookup c x T l
+... | no _    = mupdate-lookup l
+

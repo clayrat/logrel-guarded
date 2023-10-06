@@ -161,19 +161,19 @@ preserve : ∀ {M N A}
   → ∅ ⊢ N ⦂ A
 preserve (⊢` ())
 preserve (⊢ƛ ⊢N)           ()
-preserve (⊢L ⊢· ⊢M)       (ξ-·₁ L—→L′)    = (preserve ⊢L L—→L′) ⊢· ⊢M
-preserve (⊢L ⊢· ⊢M)       (ξ-·₂ VL M—→M′) = ⊢L ⊢· (preserve ⊢M M—→M′)
-preserve ((⊢ƛ ⊢N) ⊢· ⊢V) (β-ƛ VV)        = subst-ty ⊢V ⊢N
+preserve (⊢L ⊢· ⊢M)       (ξ-·₁ L→L′)   = (preserve ⊢L L→L′) ⊢· ⊢M
+preserve (⊢L ⊢· ⊢M)       (ξ-·₂ _ M→M′) = ⊢L ⊢· (preserve ⊢M M→M′)
+preserve ((⊢ƛ ⊢N) ⊢· ⊢V) (β-ƛ _)       = subst-ty ⊢V ⊢N
 
 -- context invariance
 
 free-in-ctx : ∀ {w M A Γ} → afi w M → Γ ⊢ M ⦂ A → Σ[ B ꞉ Ty ] (Γ ∋ w ⦂ B)
-free-in-ctx afi-var       (⊢` {A} p) = A , p
+free-in-ctx afi-var      (⊢` {A} p) = A , p
 free-in-ctx {w} (afi-abs ne a) (⊢ƛ {x} ⊢N) with (free-in-ctx a ⊢N)
 ... | B , here = absurd (ne refl)
 ... | B , there _ p = B , p
-free-in-ctx (afi-appl a) (⊢L ⊢· ⊢M) = free-in-ctx a ⊢L
-free-in-ctx (afi-appr a) (⊢L ⊢· ⊢M) = free-in-ctx a ⊢M
+free-in-ctx (afi-appl a) (⊢L ⊢· _) = free-in-ctx a ⊢L
+free-in-ctx (afi-appr a) (_ ⊢· ⊢M) = free-in-ctx a ⊢M
 
 ∅⊢-closed : ∀ {M A} → ∅ ⊢ M ⦂ A → closed M
 ∅⊢-closed ⊢M i a with (free-in-ctx a ⊢M)

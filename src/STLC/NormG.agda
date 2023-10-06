@@ -16,7 +16,7 @@ open import STLC.Term
 open import STLC.Ty
 open import STLC.Multi
 
---- guarded version of the R logical relation as data
+-- guarded version of the R logical relation as data
 
 {-
 data R : Ty → Term → 𝒰 where
@@ -34,11 +34,11 @@ data R : Ty → Term → 𝒰 where
 -}
 
 R-case : (Ty → Term → ▹ 𝒰) → Ty → Term → 𝒰
+R-case R▹  𝟙        t = (∅ ⊢ t ⦂ 𝟙)
+                      × halts t
 R-case R▹ (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
                       × halts t
                       × (∀ s → Part (▸ (R▹ T₁ s)) → Part (▸ (R▹ T₂ (t · s))))
-R-case R▹  𝟙        t = (∅ ⊢ t ⦂ 𝟙)
-                      × halts t
 
 R-body : ▹ (Ty → Term → 𝒰) → Ty → Term → 𝒰
 R-body f = R-case (λ T t → f ⊛ next T ⊛ next t)
@@ -51,14 +51,14 @@ R = fix R-body
 R𝟙 : ∀ {t}
    → ∅ ⊢ t ⦂ 𝟙 → halts t
    → R 𝟙 t
-R𝟙 ty h = ty , h
+R𝟙 ⊢t h = ⊢t , h
 
 R⇒ : ∀ {T₁ T₂ t}
    → ∅ ⊢ t ⦂ (T₁ ⇒ T₂) → halts t
    → (∀ s → Part (▹ (R T₁ s)) → Part (▹ (R T₂ (t · s))))
    → R (T₁ ⇒ T₂) t
-R⇒ {T₁} {T₂} {t} ty h r =
-  ty , h , λ s → transport (λ i → Part (▹[ α ] (pfix R-body (~ i) α T₁ s))
+R⇒ {T₁} {T₂} {t} ⊢t h r =
+  ⊢t , h , λ s → transport (λ i → Part (▹[ α ] (pfix R-body (~ i) α T₁ s))
                                 → Part (▹[ α ] (pfix R-body (~ i) α T₂ (t · s))))
                            (r s)
 
@@ -72,60 +72,56 @@ R𝟙-match = id
 R⇒-match : ∀ {T₁ T₂ t}
          → R (T₁ ⇒ T₂) t
          → (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → Part (▹ R T₁ s) → Part (▹ R T₂ (t · s)))
-R⇒-match {T₁} {T₂} {t} (ty , h , r) =
-  ty , h , λ s → transport (λ i → Part (▹[ α ] (pfix R-body i α T₁ s))
+R⇒-match {T₁} {T₂} {t} (⊢t , h , r) =
+  ⊢t , h , λ s → transport (λ i → Part (▹[ α ] (pfix R-body i α T₁ s))
                                 → Part (▹[ α ] (pfix R-body i α T₂ (t · s))))
                            (r s)
 
 -- projections
 
-R-halts : (T : Ty) → (t : Term) → R T t → halts t
-R-halts (T₁ ⇒ T₂) t (_ , h , _) = h
-R-halts  𝟙        t (_ , h)     = h
+R-halts : ∀ {T t} → R T t → halts t
+R-halts {T = 𝟙}       (_ , h)     = h
+R-halts {T = T₁ ⇒ T₂} (_ , h , _) = h
 
-R-typable-empty : (T : Ty) → (t : Term) → R T t → ∅ ⊢ t ⦂ T
-R-typable-empty (T₁ ⇒ T₂) t (tp , _ , _) = tp
-R-typable-empty  𝟙        t (tp , _)     = tp
+R-typable-empty : ∀ {T t} → R T t → ∅ ⊢ t ⦂ T
+R-typable-empty {T = 𝟙}       (tp , _)     = tp
+R-typable-empty {T = T₁ ⇒ T₂} (tp , _ , _) = tp
 
 -- R properties
 
-step-preserves-R : ∀ T t t′
+step-preserves-R : ∀ {T t t′}
                  → (t —→ t′) → R T t → R T t′
-step-preserves-R (T₁ ⇒ T₂) t t′ S r = let tp , h , Ri = R⇒-match r in
-  R⇒ (preserve tp S)
-     (step-preserves-halting S .fst h)
-     (λ t″ R₁ → mapᵖ (▹map (step-preserves-R T₂ (t · t″) (t′ · t″) (ξ-·₁ S)))
-                     (Ri t″ R₁))
-step-preserves-R  𝟙        t t′ S r = let tp , h = R𝟙-match r in
-  R𝟙 (preserve tp S)
-     (step-preserves-halting S .fst h)
+step-preserves-R {T = 𝟙}       S r = let tp , h = R𝟙-match r in
+  R𝟙 (preserve tp S) (step-preserves-halting S .fst h)
+step-preserves-R {T = T₁ ⇒ T₂} S r = let tp , h , Ri = R⇒-match r in
+  R⇒ (preserve tp S) (step-preserves-halting S .fst h)
+     (λ t″ R₁ → mapᵖ (▹map (step-preserves-R (ξ-·₁ S))) (Ri t″ R₁))
 
-multistep-preserves-R : ∀ T t t′
+multistep-preserves-R : ∀ {T t t′}
                       → (t —↠ t′) → R T t → R T t′
-multistep-preserves-R T t .t  (.t ∎ᵣ)         Rt = Rt
-multistep-preserves-R T t  t′ (.t —→⟨ TM ⟩ M) Rt =
-  multistep-preserves-R _ _ _ M (step-preserves-R _ _ _ TM Rt)
+multistep-preserves-R {T} {t} {.t} (.t ∎ᵣ)         Rt = Rt
+multistep-preserves-R {T} {t} {t′} (.t —→⟨ TM ⟩ M) Rt =
+  multistep-preserves-R M (step-preserves-R TM Rt)
 
-step-preserves-R' : ∀ T t t′
+step-preserves-R' : ∀ {T t t′}
                   → ∅ ⊢ t ⦂ T → (t —→ t′) → R T t′ → R T t
-step-preserves-R' (T₁ ⇒ T₂) t t′ tp S r = let (_ , h′ , Ri) = R⇒-match r in
-  R⇒ tp (step-preserves-halting S .snd h′)
-     (λ t″ R₁ → map²ᵖ (▹map² (λ x → step-preserves-R' T₂ (t · t″) (t′ · t″)
-                                       (tp ⊢· R-typable-empty T₁ t″ x) (ξ-·₁ S)))
-                       R₁ (Ri t″ R₁))
-step-preserves-R'  𝟙        t t′ tp S r = let (_ , h′) = R𝟙-match r in
+step-preserves-R' {T = 𝟙}       {t} {t′} tp S r = let _ , h′ = R𝟙-match r in
   R𝟙 tp (step-preserves-halting S .snd h′)
+step-preserves-R' {T = T₁ ⇒ T₂} {t} {t′} tp S r = let _ , h′ , Ri = R⇒-match r in
+  R⇒ tp (step-preserves-halting S .snd h′)
+     (λ t″ R₁ → map²ᵖ (▹map² (λ x → step-preserves-R' (tp ⊢· R-typable-empty x) (ξ-·₁ S)))
+                   R₁ (Ri t″ R₁))
 
-multistep-preserves-R' : ∀ T t t′
+multistep-preserves-R' : ∀ {T t t′}
                        → ∅ ⊢ t ⦂ T → (t —↠ t′) → R T t′ → R T t
-multistep-preserves-R' T t .t  tp (.t ∎ᵣ)         Rt = Rt
-multistep-preserves-R' T t  t′ tp (.t —→⟨ TM ⟩ S) Rt =
-  step-preserves-R' _ _ _ tp TM (multistep-preserves-R' _ _ _ (preserve tp TM) S Rt)
+multistep-preserves-R' {T} {t} {.t} tp (.t ∎ᵣ)         Rt = Rt
+multistep-preserves-R' {T} {t} {t′} tp (.t —→⟨ TM ⟩ S) Rt =
+  step-preserves-R' tp TM (multistep-preserves-R' (preserve tp TM) S Rt)
 
 -- instantiations
 
 data Inst : Tass → Env → 𝒰 where
-  V-nil : Inst [] []
+  V-nil  : Inst [] []
   V-cons : ∀ {x T v c e}
          → Value v → R T v → Inst c e
          → Inst ((x , T) ∷ c) ((x , v) ∷ e)
@@ -141,112 +137,98 @@ instantiation-domains-match (V-cons {x = y} {v} V r i) {x} eq with x ≟ y
 ... | yes prf = v , refl
 ... | no ctra = instantiation-domains-match i eq
 
-instantiation-env-closed : ∀ c e
+instantiation-env-closed : ∀ {c e}
                          → Inst c e
                          → closed-env e
-instantiation-env-closed .[]            .[]             V-nil                             = []
-instantiation-env-closed .((x , T) ∷ c) .((x , v) ∷ e) (V-cons {x} {T} {v} {c} {e} V r i) =
-  ∅⊢-closed (R-typable-empty T v r) ∷ instantiation-env-closed c e i
+instantiation-env-closed {.[]}            {.[]}             V-nil                             = []
+instantiation-env-closed {.((x , T) ∷ c)} {.((x , v) ∷ e)} (V-cons {x} {T} {v} {c} {e} V r i) =
+  ∅⊢-closed (R-typable-empty r) ∷ instantiation-env-closed i
 
-instantiation-R : ∀ c e
+instantiation-R : ∀ {c e t T}
                 → Inst c e
-                → ∀ x t T
+                → ∀ x
                 → lup x c ＝ just T
                 → lup x e ＝ just t
                 → R T t
-instantiation-R .[]            .[]             V-nil                                     x t T ec ee =
-  absurd (nothing≠just ee)
-instantiation-R .((y , S) ∷ c) .((y , v) ∷ e) (V-cons {x = y} {T = S} {v} {c} {e} V r i) x t T ec ee with x ≟ y
+instantiation-R {.[]}            {.[]}                     V-nil                                 _ ec _  =
+  absurd (nothing≠just ec)
+instantiation-R {.((y , S) ∷ c)} {.((y , v) ∷ e)} {t} (V-cons {x = y} {T = S} {v} {c} {e} V r i) x ec ee with x ≟ y
 ... | yes prf = subst (λ q → R q t) (just-inj ec) (subst (R S) (just-inj ee) r)
-... | no ctra = instantiation-R c e i x t T ec ee
+... | no ctra = instantiation-R i x ec ee
 
-instantiation-drop : ∀ c e
+instantiation-drop : ∀ {c e}
                    → Inst c e
                    → ∀ x → Inst (drp x c) (drp x e)
-instantiation-drop .[]            .[]             V-nil                                 x = V-nil
-instantiation-drop .((y , T) ∷ c) .((y , v) ∷ e) (V-cons {x = y} {T} {v} {c} {e} V r i) x with x ≟ y
-... | yes prf = instantiation-drop c e i x
-... | no ctra = V-cons V r (instantiation-drop c e i x)
+instantiation-drop {.[]}            {.[]}             V-nil                                 x = V-nil
+instantiation-drop {.((y , T) ∷ c)} {.((y , v) ∷ e)} (V-cons {x = y} {T} {v} {c} {e} V r i) x with x ≟ y
+... | yes prf = instantiation-drop i x
+... | no ctra = V-cons V r (instantiation-drop i x)
 
 -- The R Lemma
 
-msubst-preserves-typing : ∀ c e
+msubst-preserves-typing : ∀ {c e Γ t S}
                         → Inst c e
-                        → ∀ Γ t S
-                        → (mupdate c Γ) ⊢ t ⦂ S
-                        → Γ ⊢ (msubst e t) ⦂ S
-msubst-preserves-typing .[]            .[]             V-nil                             Γ t S ty = ty
-msubst-preserves-typing .((x , T) ∷ c) .((x , v) ∷ e) (V-cons {x} {T} {v} {c} {e} V r i) Γ t S ty =
-  msubst-preserves-typing c e i Γ (t [ x := v ]) S (subst-ty (R-typable-empty T v r) ty)
+                        → mupdate c Γ ⊢ t ⦂ S
+                        → Γ ⊢ msubst e t ⦂ S
+msubst-preserves-typing {.[]}            {.[]}             V-nil                             ty = ty
+msubst-preserves-typing {.((x , T) ∷ c)} {.((x , v) ∷ e)} (V-cons {x} {T} {v} {c} {e} V r i) ty =
+  msubst-preserves-typing i (subst-ty (R-typable-empty r) ty)
 
-msubst-R : ∀ c e t T
-         → (mupdate c ∅) ⊢ t ⦂ T
+msubst-R : ∀ {c e t T}
+         → mupdate c ∅ ⊢ t ⦂ T
          → Inst c e
          → Part (R T (msubst e t))
-msubst-R c e .𝓉𝓉         T        ⊢𝓉𝓉                    i =
+msubst-R     {e}                          ⊢𝓉𝓉                             i =
   let mu = sym $ msubst-unit e in
-  now $
-  R𝟙 (subst (λ q → ∅ ⊢ q ⦂ 𝟙) mu ⊢𝓉𝓉)
-     (𝓉𝓉 , subst (_—↠ 𝓉𝓉) mu (𝓉𝓉 ∎ᵣ) , V-𝓉𝓉)
-msubst-R c e .(` x)      T       (⊢` {x} l)              i =
-  let lupc = mupdate-lookup c x T l
+  now $ R𝟙 (subst (λ q → ∅ ⊢ q ⦂ 𝟙) mu ⊢𝓉𝓉)
+           (subst halts mu $ value-halts V-𝓉𝓉)
+msubst-R         {t = .(` x)}            (⊢` {x} l)                       i =
+  let lupc = mupdate-lookup l
       t′ , P = instantiation-domains-match i lupc
     in
-  now $
-  instantiation-R c e i x (msubst e (` x)) T lupc
+  now $ instantiation-R i x lupc
     (P ∙ ap just (sym (ap (extract (` x)) P)
-                       ∙ sym (msubst-var e x (instantiation-env-closed c e i))))
-msubst-R c e .(ƛ x ⇒ N) .(A ⇒ B) (⊢ƛ {x} {N} {A} {B} ty) i =
+                  ∙ sym (msubst-var (instantiation-env-closed i) x)))
+msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)         i =
   let mabs = msubst-abs e x N
       WT : ∅ ⊢ ƛ x ⇒ msubst (drp x e) N ⦂ A ⇒ B
-      WT = ⊢ƛ $ msubst-preserves-typing (drp x c) (drp x e)
-                    (instantiation-drop c e i x)
-                    (∅ , x ⦂ A) N B
-                    (weaken (go c x A) ty)
+      WT = ⊢ƛ $ msubst-preserves-typing (instantiation-drop i x)
+                                         (weaken (go c x A) ⊢N)
       in
-   now $
-   R⇒ (subst (λ q → ∅ ⊢ q ⦂ A ⇒ B) (sym mabs) WT)
-      (value-halts (subst Value (sym mabs) V-ƛ))
-      (λ s Rp → Rp >>=ᵖ λ R▹ →
-         ▹Part $
-         ▹map (λ Rs →
-               let v , P , Q = R-halts A s Rs
-                   Rv = multistep-preserves-R A s v P Rs
-                in
-                mapᵖ (λ R2 →
-                       subst (λ q → R B (q · s)) (sym mabs) $
-                       multistep-preserves-R' B
-                         ((ƛ x ⇒ msubst (drp x e) N) · s)
-                         (msubst ((x , v) ∷ e) N)
-                         (WT ⊢· (R-typable-empty A s Rs))
-                         (multistep-appr (ƛ x ⇒ msubst (drp x e) N) s v V-ƛ P
-                           —↠∘
-                          (((ƛ x ⇒ msubst (drp x e) N) · v)
-                             —→⟨ subst (λ q → (ƛ x ⇒ msubst (drp x e) N) · v —→ q)
-                                       (sym $ subst-msubst e x v N
-                                                (∅⊢-closed (R-typable-empty A v Rv))
-                                                (instantiation-env-closed c e i))
-                                       (β-ƛ Q) ⟩
-                           (msubst e (N [ x := v ]) ∎ᵣ)))
-                         R2)
-                     (msubst-R ((x , A) ∷ c) ((x , v) ∷ e) N B ty (V-cons Q Rv i)))
-              R▹)
+  now $ R⇒ (subst (λ q → ∅ ⊢ q ⦂ A ⇒ B) (sym mabs) WT)
+           (value-halts (subst Value (sym mabs) V-ƛ))
+           (λ s Rp → Rp >>=ᵖ (▹Part ∘ ▹map
+              λ Rs →
+                 let v , P , Q  = R-halts Rs
+                     Rv = multistep-preserves-R P Rs
+                   in
+                 mapᵖ (subst (λ q → R B (q · s)) (sym mabs) ∘
+                       multistep-preserves-R'
+                         (WT ⊢· R-typable-empty Rs)
+                         (multistep-appr V-ƛ P
+                           —↠+
+                          subst (λ q → (ƛ x ⇒ msubst (drp x e) N) · v —→ q)
+                                (sym $ subst-msubst (∅⊢-closed (R-typable-empty Rv))
+                                                    (instantiation-env-closed i)
+                                                    x N)
+                                (β-ƛ Q)))
+                      (msubst-R ⊢N (V-cons Q Rv i))))
   where
   go : ∀ c x A → (mupdate c ∅ , x ⦂ A) ⊆ mupdate (drp x c) (∅ , x ⦂ A)
-  go []            x A  T  i  l = l
-  go ((y , p) ∷ c) x A  T  i  l with x ≟ y
+  go []            x A T i l = l
+  go ((y , p) ∷ c) x A T i l with x ≟ y
   ... | yes prf = go c x A T i (⊆-shadow T i (subst (λ q → mupdate c ∅ , q ⦂ p , x ⦂ A ∋ i ⦂ T) (sym prf) l))
   go ((y , p) ∷ c) x A .A .x  here                     | no ctra = there ctra (go c x A A x here)
   go ((y , p) ∷ c) x A .p .y (there _    here)         | no ctra = here
   go ((y , p) ∷ c) x A  T  i (there i≠x (there i≠y l)) | no ctra = there i≠y (go c x A T i (there i≠x l))
-msubst-R c e .(L · M)    T       (_⊢·_ {L} {M} {A} ty₁ ty₂) i =
-  (msubst-R c e L (A ⇒ T) ty₁ i) >>=ᵖ λ R1 →
+msubst-R     {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)        i =
+  msubst-R ⊢L i >>=ᵖ λ R1 →
   let (_ , _ , R1→) = R⇒-match R1 in
-  (msubst-R c e M A ty₂ i) >>=ᵖ λ R2 →
+  msubst-R ⊢M i >>=ᵖ λ R2 →
   let Rapp = R1→ (msubst e M) (now (next R2)) in
   later $ Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp
 
-normalization : ∀ t T
+normalization : ∀ {t T}
               → ∅ ⊢ t ⦂ T
               → Part (halts t)
-normalization t T ty = mapᵖ (R-halts T t) (msubst-R [] [] t T ty V-nil)
+normalization ⊢t = mapᵖ R-halts $ msubst-R ⊢t V-nil

@@ -25,10 +25,10 @@ infix  9 _[_:=_]
 -- terms
 
 data Term : 𝒰 where
-  𝓉𝓉   : Term
-  `_   : Id → Term
+  𝓉𝓉    : Term
+  `_    : Id → Term
   ƛ_⇒_ : Id → Term → Term
-  _·_  : Term → Term → Term
+  _·_   : Term → Term → Term
 
 -- TODO terms form a set
 
@@ -47,8 +47,8 @@ _[_:=_] : Term → Id → Term → Term
 -- values
 
 data Value : Term → 𝒰 where
-  V-ƛ  : ∀ {x N} → Value (ƛ x ⇒ N)
   V-𝓉𝓉 : Value 𝓉𝓉
+  V-ƛ : ∀ {x N} → Value (ƛ x ⇒ N)
 
 -- reduction step
 
@@ -88,17 +88,26 @@ begin_ : ∀ {M N}
   → M —↠ N
 begin M—↠N = M—↠N
 
+-- lifting
+^—↠ : ∀ {L M} → L —→ M → L —↠ M
+^—↠ {L} {M} LM = L —→⟨ LM ⟩ M ∎ᵣ
+
+-- concatenating
 _—↠∘_ : ∀ {L M N} → L —↠ M → M —↠ N → L —↠ N
 (_ ∎ᵣ)            —↠∘ LN = LN
 (L₀ —→⟨ L₀L ⟩ LM) —↠∘ MN = L₀ —→⟨ L₀L ⟩ (LM —↠∘ MN)
 
+-- appending
+_—↠+_ : ∀ {L M N} → L —↠ M → M —→ N → L —↠ N
+LM —↠+ MN = LM —↠∘ (^—↠ MN)
+
 -- congruence on multistep
-multistep-appr : ∀ v t t′
-               → Value v
-               → (t —↠ t′)
-               → (v · t) —↠ (v · t′)
-multistep-appr v t .t  V (.t ∎ᵣ)        = v · t ∎ᵣ
-multistep-appr v t  t′ V (.t —→⟨ T ⟩ S) = v · t —→⟨ ξ-·₂ V T ⟩ multistep-appr _ _ _ V S
+multistep-appr : ∀ {V M M′}
+               → Value V
+               → M —↠ M′
+               → (V · M) —↠ (V · M′)
+multistep-appr {V} {M} {.M} VV (.M ∎ᵣ)         = V · M ∎ᵣ
+multistep-appr {V} {M} {M′} VV (.M —→⟨ S ⟩ MS) = V · M —→⟨ ξ-·₂ VV S ⟩ multistep-appr VV MS
 
 -- normal form
 
@@ -109,7 +118,7 @@ nf-is-prop : ∀ {t} → is-prop (nf t)
 nf-is-prop = ¬-is-prop
 
 value-nf : ∀ {t} → Value t → nf t
-value-nf {t = .(ƛ x ⇒ N)} (V-ƛ {x} {N}) (M , ())
+value-nf {.(ƛ x ⇒ N)} (V-ƛ {x} {N}) (M , ())
 
 -- context invariance
 
@@ -128,9 +137,9 @@ closed t = ∀ i → ¬ afi i t
 step-det : deterministic _—→_
 step-det .(L · M)          .(L₁ · M)         .(L₂ · M)        (ξ-·₁ {L} {L′ = L₁} {M} LL₁)       (ξ-·₁ {L′ = L₂} LL₂)       =
   ap (_· M) (step-det L L₁ L₂ LL₁ LL₂)
-step-det .(L · M₁)         .(L′ · M₁)        .(L · M₂)        (ξ-·₁ {L} {L′} {M = M₁} LL′)       (ξ-·₂ {M′ = M₂} VL M₁₂)    =
+step-det .(L · M₁)         .(L′ · M₁)        .(L · M₂)        (ξ-·₁ {L} {L′} {M = M₁} LL′)       (ξ-·₂ {M′ = M₂} VL _)      =
   absurd (value-nf VL (L′ , LL′))
-step-det .(L · M)          .(L · M′)         .(L′ · M)        (ξ-·₂ {V = L} {M} {M′} VL MM′)     (ξ-·₁ {L′} LL′)            =
+step-det .(L · M)          .(L · M′)         .(L′ · M)        (ξ-·₂ {V = L} {M} {M′} VL _)       (ξ-·₁ {L′} LL′)            =
   absurd (value-nf VL (L′ , LL′))
 step-det .(L · M)          .(L · M₁)         .(L · M₂)        (ξ-·₂ {V = L} {M} {M′ = M₁} _ MM₁) (ξ-·₂ {M′ = M₂} _ MM₂)     =
   ap (L ·_) (step-det M M₁ M₂ MM₁ MM₂)
@@ -138,7 +147,7 @@ step-det .((ƛ x ⇒ N) · M₁) .((ƛ x ⇒ N) · M₂) .(N [ x := M₁ ]) (ξ-
   absurd (value-nf VM₁ (M₂ , M₁₂))
 step-det .((ƛ x ⇒ N) · L)  .(N [ x := L ])   .((ƛ x ⇒ N) · M) (β-ƛ {x} {N} {V = L} VL)           (ξ-·₂ {M′ = M} _ LM)       =
   absurd (value-nf VL (M , LM))
-step-det .((ƛ x ⇒ N) · V)  .(N [ x := V ])   .(N [ x := V ])  (β-ƛ {x} {N} {V} VV)               (β-ƛ _)                    =
+step-det .((ƛ _ ⇒ _) · _)  .(N [ x := V ])   .(N [ x := V ])  (β-ƛ {x} {N} {V} VV)               (β-ƛ _)                    =
   refl
 
 -- halting
@@ -150,7 +159,8 @@ value-halts : {v : Term} → Value v → halts v
 value-halts {v} V = v , (v ∎ᵣ) , V
 
 step-preserves-halting : {t t′ : Term}
-                       → (t —→ t′) → (halts t ↔ halts t′)
+                       → (t —→ t′)
+                       → (halts t ↔ halts t′)
 step-preserves-halting {t} {t′} S =
   (λ where
       (t″ , (.t″ ∎ᵣ) , V) →
@@ -176,9 +186,9 @@ vacuous-subst (t₁ · t₂) x nafi t′ =
   ap² _·_ (vacuous-subst t₁ x (nafi ∘ afi-appl) t′)
           (vacuous-subst t₂ x (nafi ∘ afi-appr) t′)
 
-subst-closed : ∀ t
+subst-closed : ∀ {t}
              → closed t → ∀ x t′ → t [ x := t′ ] ＝ t
-subst-closed t c x t′ = vacuous-subst t x (c x) t′
+subst-closed {t} c x t′ = vacuous-subst t x (c x) t′
 
 subst-not-afi : ∀ t x v
               → closed v → ¬ afi x (t [ x := v ])
@@ -191,8 +201,9 @@ subst-not-afi (ƛ y ⇒ t)  x v cv (afi-abs x≠y a) | no _    =
   subst-not-afi t x v cv a
 subst-not-afi (t₁ · t₂)  x v cv (afi-appl a) = subst-not-afi t₁ x v cv a
 subst-not-afi (t₁ · t₂)  x v cv (afi-appr a) = subst-not-afi t₂ x v cv a
-
-duplicate-subst : ∀ t x v w → closed v → t [ x := v ] [ x := w ] ＝ t [ x := v ]
+duplicate-subst : ∀ t x v w
+                → closed v
+                → t [ x := v ] [ x := w ] ＝ t [ x := v ]
 duplicate-subst t x v w cv = vacuous-subst (t [ x := v ]) x (subst-not-afi t x v cv) w
 
 -- noisy because of repeated matching (can't backpropagate a match after a same redex has surfaced)
@@ -203,10 +214,10 @@ swap-subst 𝓉𝓉        x y v w x≠y cv cw = refl
 swap-subst (` z)     x y v w x≠y cv cw with z ≟ x | z ≟ y
 swap-subst (` z)     x y v w x≠y cv cw | yes zx | yes zy  = absurd (x≠y (sym zx ∙ zy))
 swap-subst (` z)     x y v w x≠y cv cw | yes zx | no z≠y with z ≟ x -- AARGH
-swap-subst (` z)     x y v w x≠y cv cw | yes zx | no z≠y | yes _ = subst-closed v cv y w
+swap-subst (` z)     x y v w x≠y cv cw | yes zx | no z≠y | yes _ = subst-closed cv y w
 swap-subst (` z)     x y v w x≠y cv cw | yes zx | no z≠y | no ctra = absurd (ctra zx)
 swap-subst (` z)     x y v w x≠y cv cw | no z≠x | yes zy with z ≟ y -- AARGH
-swap-subst (` z)     x y v w x≠y cv cw | no z≠x | yes zy | yes _ = sym (subst-closed w cw x v)
+swap-subst (` z)     x y v w x≠y cv cw | no z≠x | yes zy | yes _ = sym (subst-closed cw x v)
 swap-subst (` z)     x y v w x≠y cv cw | no z≠x | yes zy | no ctra = absurd (ctra zy)
 swap-subst (` z)     x y v w x≠y cv cw | no z≠x | no z≠y with z ≟ x  -- AAAARGGH
 swap-subst (` z)     x y v w x≠y cv cw | no z≠x | no z≠y | yes prf = absurd (z≠x prf)
