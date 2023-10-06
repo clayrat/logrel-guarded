@@ -25,26 +25,28 @@ R (T₁ 𝕩 T₂) t = (∅ ⊢ t ⦂ T₁ 𝕩 T₂)
               × R T₁ (t ⇀₁) × R T₂ (t ⇀₂)
 
 R-halts : ∀ {T t} → R T t → halts t
+R-halts {T = 𝟚}       (_ , h)     = h
 R-halts {T = T₁ ⇒ T₂} (_ , h , _) = h
 R-halts {T = T₁ 𝕩 T₂} (_ , h , _) = h
-R-halts {T = 𝟚}       (_ , h)     = h
 
 R-typable-empty : ∀ {T t} → R T t → ∅ ⊢ t ⦂ T
+R-typable-empty {T = 𝟚}       (tp , _)     = tp
 R-typable-empty {T = T₁ ⇒ T₂} (tp , _ , _) = tp
 R-typable-empty {T = T₁ 𝕩 T₂} (tp , _ , _) = tp
-R-typable-empty {T = 𝟚}       (tp , _)     = tp
+
+-- R properties
 
 step-preserves-R : ∀ {T t t′}
                  → (t —→ t′) → R T t → R T t′
-step-preserves-R {T = T₁ ⇒ T₂} {t} {t′} S (tp , h , Ri)         =
+step-preserves-R {T = 𝟚}       S (tp , h)             =
+  (preserve tp S) , (step-preserves-halting S .fst h)
+step-preserves-R {T = T₁ ⇒ T₂} S (tp , h , Ri)        =
   preserve tp S , step-preserves-halting S .fst h ,
     λ t″ R₁ → step-preserves-R (ξ-·₁ S) (Ri t″ R₁)
-step-preserves-R {T = T₁ 𝕩 T₂} {t} {t′} S (tp , h , Rp1 , Rp2) =
+step-preserves-R {T = T₁ 𝕩 T₂} S (tp , h , Rp1 , Rp2) =
   preserve tp S , step-preserves-halting S .fst h
   , step-preserves-R (ξ-⇀₁ S) Rp1
   , step-preserves-R (ξ-⇀₂ S) Rp2
-step-preserves-R {T = 𝟚}       {t} {t′} S (tp , h)              =
-  (preserve tp S) , (step-preserves-halting S .fst h)
 
 multistep-preserves-R : ∀ {T t t′}
                       → (t —↠ t′) → R T t → R T t′
@@ -54,16 +56,16 @@ multistep-preserves-R {T} {t} {t′} (.t —→⟨ TM ⟩ M) Rt =
 
 step-preserves-R' : ∀ {T t t′}
                   → ∅ ⊢ t ⦂ T → (t —→ t′) → R T t′ → R T t
+step-preserves-R' {T = 𝟚}       {t} {t′} tp S (_ , h′)             =
+  tp , step-preserves-halting S .snd h′
 step-preserves-R' {T = T₁ ⇒ T₂} {t} {t′} tp S (_ , h′ , Ri)        =
   tp , step-preserves-halting S .snd h′ ,
-    λ t″ R₁ → step-preserves-R' (tp ⊢· R-typable-empty R₁)
-                                (ξ-·₁ S) (Ri t″ R₁)
+    λ t″ R₁ → step-preserves-R' (tp ⊢· R-typable-empty R₁) (ξ-·₁ S)
+                                (Ri t″ R₁)
 step-preserves-R' {T = T₁ 𝕩 T₂} {t} {t′} tp S (_ , h′ , Rp1 , Rp2) =
   tp , step-preserves-halting S .snd h′
   , step-preserves-R' (⊢⇀₁ tp) (ξ-⇀₁ S) Rp1
   , step-preserves-R' (⊢⇀₂ tp) (ξ-⇀₂ S) Rp2
-step-preserves-R' {T = 𝟚}       {t} {t′} tp S (_ , h′)             =
-  tp , step-preserves-halting S .snd h′
 
 multistep-preserves-R' : ∀ {T t t′}
                        → ∅ ⊢ t ⦂ T → (t —↠ t′) → R T t′ → R T t
@@ -131,7 +133,8 @@ msubst-R : ∀ {c e t T}
          → mupdate c ∅ ⊢ t ⦂ T
          → Inst c e
          → R T (msubst e t)
-msubst-R {c} {e} {.(` x)}      {T}       (⊢` {x} l)                       i =
+------ core ------
+msubst-R         {t = .(` x)}           (⊢` {x} l)                       i =
   let lupc = mupdate-lookup l
       t′ , P = instantiation-domains-match i lupc
     in
@@ -169,21 +172,24 @@ msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)      
   go ((y , p) ∷ c) x A .A .x  here                     | no ctra = there ctra (go c x A A x here)
   go ((y , p) ∷ c) x A .p .y (there _    here)         | no ctra = here
   go ((y , p) ∷ c) x A  T  i (there i≠x (there i≠y l)) | no ctra = there i≠y (go c x A T i (there i≠x l))
-msubst-R {c} {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)        i =
-  subst (R T) (sym (msubst-app e L M)) $
-  msubst-R ⊢L i .snd .snd _ $
-  msubst-R ⊢M i
-msubst-R {c} {e} {.𝓉}              {.𝟚}        ⊢𝓉                         i =
+msubst-R     {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)        i =
+  let (_ , _ , R1→) = msubst-R ⊢L i
+      R2 = msubst-R ⊢M i
+      Rapp = R1→ (msubst e M) R2
+    in
+  subst (R T) (sym $ msubst-app e L M) Rapp
+------ booleans ------
+msubst-R     {e}                          ⊢𝓉                         i =
   let mt = sym $ msubst-true e in
     subst (λ q → ∅ ⊢ q ⦂ 𝟚) mt ⊢𝓉
   , (subst halts mt $ value-halts V-𝓉)
-msubst-R {c} {e} {.𝒻}             {.𝟚}        ⊢𝒻                         i =
+msubst-R     {e}                           ⊢𝒻                        i =
   let mf = sym $ msubst-false e in
     subst (λ q → ∅ ⊢ q ⦂ 𝟚) mf ⊢𝒻
   , (subst halts mf $ value-halts V-𝒻)
 msubst-R {c} {e} {.(⁇ L ↑ M ↓ N)}   {T}       (⊢⁇ {L} {M} {N} ⊢L ⊢M ⊢N) i with msubst-R ⊢L i
 ... | ⊢mL , .(ƛ _ ⇒ _)  , S , V-ƛ      = absurd (¬ƛ⦂𝟚 $ multi-preserve ⊢mL S)
-... | ⊢mL , .𝓉         , S , V-𝓉       =
+... | ⊢mL , .𝓉                , S , V-𝓉      =
   subst (R T) (sym $ msubst-if e L M N) $
   multistep-preserves-R'
     (⊢⁇ ⊢mL (msubst-preserves-typing i ⊢M) (msubst-preserves-typing i ⊢N))
@@ -196,13 +202,13 @@ msubst-R {c} {e} {.(⁇ L ↑ M ↓ N)}   {T}       (⊢⁇ {L} {M} {N} ⊢L ⊢
     (multistep-test0 S —↠+ β-𝒻)
     (msubst-R ⊢N i)
 ... | ⊢mL , .(〈 _ ⹁ _ 〉) , S , V-〈〉 _ _ = absurd (¬〈〉⦂𝟚 $ multi-preserve ⊢mL S)
-msubst-R {c} {e} {.(〈 L ⹁ M 〉)}     {.(A 𝕩 B)} (⊢〈〉 {L} {M} {A} {B} ⊢L ⊢M) i =
+msubst-R     {e} {.(〈 L ⹁ M 〉)}     {.(A 𝕩 B)} (⊢〈〉 {L} {M} {A} {B} ⊢L ⊢M) i =
   let mp = sym $ msubst-pair e L M
-      r1 = msubst-R ⊢L i
-      r2 = msubst-R ⊢M i
-      t1 , s1 , v1 = R-halts r1
-      t2 , s2 , v2 = R-halts r2
       ⊢mLM = ⊢〈〉 (msubst-preserves-typing i ⊢L) (msubst-preserves-typing i ⊢M)
+      R1 = msubst-R ⊢L i
+      R2 = msubst-R ⊢M i
+      t1 , s1 , v1 = R-halts R1
+      t2 , s2 , v2 = R-halts R2
       s12 = multistep-pairl s1 —↠∘ multistep-pairr v1 s2
     in
     (subst (λ q → ∅ ⊢ q ⦂ A 𝕩 B) mp ⊢mLM)
@@ -210,16 +216,16 @@ msubst-R {c} {e} {.(〈 L ⹁ M 〉)}     {.(A 𝕩 B)} (⊢〈〉 {L} {M} {A} {
      〈 t1 ⹁ t2 〉 , s12 , V-〈〉 v1 v2)
   , (subst (λ q → R A (q ⇀₁)) mp $
      multistep-preserves-R' (⊢⇀₁ ⊢mLM) (multistep-fst s12 —↠+ β-〈〉₁ v1 v2) $
-     multistep-preserves-R s1 r1)
+     multistep-preserves-R s1 R1)
   , (subst (λ q → R B (q ⇀₂)) mp $
      multistep-preserves-R' (⊢⇀₂ ⊢mLM) (multistep-snd s12 —↠+ β-〈〉₂ v1 v2) $
-     multistep-preserves-R s2 r2)
-msubst-R {c} {e} {.(L ⇀₁)}         {T = A}  (⊢⇀₁ {L} {B} ⊢L)              i =
-  subst (R A) (sym $ msubst-fst e L) $
-  msubst-R ⊢L i .snd .snd .fst
+     multistep-preserves-R s2 R2)
+msubst-R     {e} {.(L ⇀₁)}         {T = A}  (⊢⇀₁ {L} {B} ⊢L)              i =
+  let _ , _ , Ra , _ = msubst-R ⊢L i in
+  subst (R A) (sym $ msubst-fst e L) Ra
 msubst-R {c} {e} {.(L ⇀₂)}         {T = B}  (⊢⇀₂ {L} {A} ⊢L)              i =
-  subst (R B) (sym $ msubst-snd e L) $
-  msubst-R ⊢L i .snd .snd .snd
+  let _ , _ , _ , Rb = msubst-R ⊢L i in
+  subst (R B) (sym $ msubst-snd e L) Rb
 
 normalization : ∀ {t T}
               → ∅ ⊢ t ⦂ T

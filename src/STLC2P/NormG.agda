@@ -278,7 +278,7 @@ msubst-R     {e} {.(⁇ L ↑ M ↓ N)}   {T}       (⊢⁇ {L} {M} {N} ⊢L ⊢
   where
   go : R 𝟚 (msubst e L) → Part (R T (msubst e (⁇ L ↑ M ↓ N)))
   go (⊢mL , .(ƛ _ ⇒ _)  , S , V-ƛ) = absurd (¬ƛ⦂𝟚 $ multi-preserve ⊢mL S)
-  go (⊢mL , .𝓉         , S , V-𝓉)  =
+  go (⊢mL , .𝓉          , S , V-𝓉) =
     mapᵖ (subst (R T) (sym $ msubst-if e L M N) ∘
           multistep-preserves-R'
             (⊢⁇ ⊢mL (msubst-preserves-typing i ⊢M) (msubst-preserves-typing i ⊢N))

@@ -29,6 +29,8 @@ R-typable-empty : ∀ {T t} → R T t → ∅ ⊢ t ⦂ T
 R-typable-empty {T = 𝟙}       (tp , _)     = tp
 R-typable-empty {T = T₁ ⇒ T₂} (tp , _ , _) = tp
 
+-- R properties
+
 step-preserves-R : ∀ {T t t′}
                  → (t —→ t′) → R T t → R T t′
 step-preserves-R {T = 𝟙}       {t} {t′} S (tp , h)              =
@@ -49,8 +51,8 @@ step-preserves-R' {T = 𝟙}       {t} {t′} tp S (_ , h′)             =
   tp , step-preserves-halting S .snd h′
 step-preserves-R' {T = T₁ ⇒ T₂} {t} {t′} tp S (_ , h′ , Ri)        =
   tp , step-preserves-halting S .snd h′ ,
-    λ t″ R₁ → step-preserves-R' (tp ⊢· R-typable-empty R₁)
-                                (ξ-·₁ S) (Ri t″ R₁)
+    λ t″ R₁ → step-preserves-R' (tp ⊢· R-typable-empty R₁) (ξ-·₁ S)
+                                (Ri t″ R₁)
 
 multistep-preserves-R' : ∀ {T t t′}
                        → ∅ ⊢ t ⦂ T → (t —↠ t′) → R T t′ → R T t
@@ -118,11 +120,11 @@ msubst-R : ∀ {c e t T}
          → mupdate c ∅ ⊢ t ⦂ T
          → Inst c e
          → R T (msubst e t)
-msubst-R {c} {e} {.𝓉𝓉}         {.𝟙}       ⊢𝓉𝓉                         i =
+msubst-R     {e}                          ⊢𝓉𝓉                         i =
   let mu = sym $ msubst-unit e in
     subst (λ q → ∅ ⊢ q ⦂ 𝟙) mu ⊢𝓉𝓉
   , (subst halts mu $ value-halts V-𝓉𝓉)
-msubst-R {c} {e} {.(` x)}      {T}       (⊢` {x} l)                       i =
+msubst-R         {t = .(` x)}            (⊢` {x} l)                       i =
   let lupc = mupdate-lookup l
       t′ , P = instantiation-domains-match i lupc
     in
@@ -134,7 +136,7 @@ msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)      
       WT : ∅ ⊢ ƛ x ⇒ msubst (drp x e) N ⦂ A ⇒ B
       WT = ⊢ƛ $ msubst-preserves-typing (instantiation-drop i x)
                                          (weaken (go c x A) ⊢N)
-      in
+    in
     subst (λ q → ∅ ⊢ q ⦂ A ⇒ B) (sym mabs) WT
   , value-halts (subst Value (sym mabs) V-ƛ)
   , λ s Rs →
@@ -160,10 +162,12 @@ msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)      
   go ((y , p) ∷ c) x A .A .x  here                     | no ctra = there ctra (go c x A A x here)
   go ((y , p) ∷ c) x A .p .y (there _    here)         | no ctra = here
   go ((y , p) ∷ c) x A  T  i (there i≠x (there i≠y l)) | no ctra = there i≠y (go c x A T i (there i≠x l))
-msubst-R {c} {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)        i =
-  subst (R T) (sym (msubst-app e L M)) $
-  msubst-R ⊢L i .snd .snd _ $
-  msubst-R ⊢M i
+msubst-R     {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)        i =
+  let (_ , _ , R1→) = msubst-R ⊢L i
+      R2 = msubst-R ⊢M i
+      Rapp = R1→ (msubst e M) R2
+    in
+  subst (R T) (sym $ msubst-app e L M) Rapp
 
 normalization : ∀ {t T}
               → ∅ ⊢ t ⦂ T
