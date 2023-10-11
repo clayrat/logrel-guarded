@@ -1,4 +1,4 @@
-module STLC2P.Term where
+module STLC2P.Ext.Term where
 
 open import Prelude
 open import Data.Empty

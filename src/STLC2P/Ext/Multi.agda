@@ -1,4 +1,4 @@
-module STLC2P.Multi where
+module STLC2P.Ext.Multi where
 
 open import Prelude
 open import Data.Empty
@@ -9,8 +9,8 @@ open import Data.List.Correspondences.Unary.All
 open import Data.String
 
 open import Interlude
-open import STLC2P.Term
-open import STLC2P.Ty
+open import STLC2P.Ext.Term
+open import STLC2P.Ext.Ty
 
 -- multisubstitution
 

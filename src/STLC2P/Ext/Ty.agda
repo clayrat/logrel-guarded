@@ -1,4 +1,4 @@
-module STLC2P.Ty where
+module STLC2P.Ext.Ty where
 
 open import Prelude
 open import Data.Empty
@@ -6,7 +6,7 @@ open import Data.Dec
 open import Data.String
 open import Data.List
 
-open import STLC2P.Term
+open import STLC2P.Ext.Term
 
 infix  4  _∋_⦂_
 infix  4  _⊢_⦂_

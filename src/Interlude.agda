@@ -1,7 +1,7 @@
 module Interlude where
 
 open import Prelude
-open import Correspondences.Base using (Corr²)
+open import Correspondences.Base using (Corr¹ ; Corr²)
 open import Data.Empty
 open import Data.Bool
 open import Data.Dec
@@ -45,6 +45,12 @@ _↔_ : 𝒰 ℓ → 𝒰 ℓ′ → 𝒰 (ℓ ⊔ ℓ′)
 A ↔ B = (A → B) × (B → A)
 
 -- relation properties
+
+𝒫 : 𝒰 ℓ → 𝒰 (ℓsuc ℓ)
+𝒫 {ℓ} X = Corr¹ ℓ X
+
+_∈ₚ_ : A → 𝒫 A → 𝒰 (level-of-type A)
+x ∈ₚ P = P x
 
 ℛ : 𝒰 ℓ → 𝒰 (ℓsuc ℓ)
 ℛ {ℓ} X = Corr² ℓ (X , X)

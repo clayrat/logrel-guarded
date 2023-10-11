@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module STLC2P.NormG where
+module STLC2P.Ext.NormG where
 
 open import Prelude
 open import Data.Empty
@@ -12,9 +12,9 @@ open import Later
 open import Interlude
 open import Guarded.Partial
 
-open import STLC2P.Term
-open import STLC2P.Ty
-open import STLC2P.Multi
+open import STLC2P.Ext.Term
+open import STLC2P.Ext.Ty
+open import STLC2P.Ext.Multi
 
 -- guarded version of the R logical relation as data
 
