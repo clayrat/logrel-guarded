@@ -6,7 +6,7 @@ open import Data.List
 
 open import Interlude
 open import STLC2.Int.TyTerm
-open import STLC2.Int.Semantics
+open import STLC2.Int.OpSem
 
 infix 4 _⊨_
 
@@ -19,6 +19,9 @@ infix 4 _⊨_
 
 _⊨_ : (Γ : Ctx) → Env Γ → 𝒰
 Γ ⊨ γ = ∀ {T} → (i : Γ ∋ T) → γ i ∈ₚ ⟦ T ⟧
+
+⊨empty : ∅ ⊨ empty
+⊨empty ()
 
 -- Extending semantically typed environments
 _^_ : ∀ {Γ} {γ : Env Γ} {T a}
@@ -63,6 +66,6 @@ fundamental-lemma (⁇ r ↑ s ↓ t) ⊨γ with fundamental-lemma r ⊨γ
 
 ⇓-total : ∀ {T}
         → (t : ∅ ⊢ T) → ⇓-well-defined t
-⇓-total t = let a , t⇓a , _ = fundamental-lemma t (λ ()) in
+⇓-total t = let a , t⇓a , _ = fundamental-lemma t ⊨empty in
             a , t⇓a
 

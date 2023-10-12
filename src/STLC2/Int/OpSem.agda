@@ -1,4 +1,4 @@
-module STLC2.Int.Semantics where
+module STLC2.Int.OpSem where
 
 open import Prelude
 open import Data.Empty
