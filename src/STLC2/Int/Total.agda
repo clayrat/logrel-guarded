@@ -18,7 +18,7 @@ infix 4 _⊨_
 -- Semantic typing for environments
 
 _⊨_ : (Γ : Ctx) → Env Γ → 𝒰
-Γ ⊨ γ = ∀ {T} → (i : Γ ∋ T) → γ i ∈ₚ ⟦ T ⟧
+Γ ⊨ γ = ∀ {T} → (i : Γ ∋ T) → γ T i ∈ₚ ⟦ T ⟧
 
 ⊨empty : ∅ ⊨ empty
 ⊨empty ()
@@ -40,21 +40,21 @@ syntax sem-ty {Γ} {T} t = Γ ⊨ t ⦂ T
 -- Syntactic typing implies semantic typing
 fundamental-lemma : ∀ {Γ T}
                   → (t : Γ ⊢ T) → Γ ⊨ t ⦂ T
-fundamental-lemma (` i)      {γ} ⊨γ =
-  γ i , ⇓` , ⊨γ i
-fundamental-lemma (ƛ t)      {γ} ⊨γ =
+fundamental-lemma {T} (` i)      {γ} ⊨γ =
+  γ T i , ⇓` , ⊨γ i
+fundamental-lemma     (ƛ t)      {γ} ⊨γ =
   (⟨ƛ t ⟩ γ) , ⇓ƛ , λ Aa → fundamental-lemma t (⊨γ ^ Aa)
-fundamental-lemma (r · s)        ⊨γ with fundamental-lemma r ⊨γ
+fundamental-lemma     (r · s)        ⊨γ with fundamental-lemma r ⊨γ
 ... | ⟨ƛ t ⟩ δ , r⇓ , sf =
   let a , s⇓ , sa = fundamental-lemma s ⊨γ
       b , t⇓ , sb = sf sa
     in
   b , ⇓· r⇓ s⇓ t⇓ , sb
-fundamental-lemma  𝓉             _  =
+fundamental-lemma      𝓉             _  =
   ⟨𝓉⟩ , ⇓𝓉 , tt
-fundamental-lemma  𝒻            _  =
+fundamental-lemma      𝒻            _  =
   ⟨𝒻⟩ , ⇓𝒻 , tt
-fundamental-lemma (⁇ r ↑ s ↓ t) ⊨γ with fundamental-lemma r ⊨γ
+fundamental-lemma     (⁇ r ↑ s ↓ t) ⊨γ with fundamental-lemma r ⊨γ
 ... | ⟨𝓉⟩ , r⇓ , _ =
         let a , s⇓ , sa = fundamental-lemma s ⊨γ in
         a , ⇓⁇↑ r⇓ s⇓ , sa

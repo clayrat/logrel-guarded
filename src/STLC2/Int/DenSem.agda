@@ -6,9 +6,10 @@ open import Data.Bool
 open import Interlude
 open import STLC2.Int.TyTerm
 open import STLC2.Int.OpSem
+open import STLC2.Int.Readback
 
 private variable
-  Γ : Ctx
+  Γ Δ : Ctx
   T : Ty
 
 -- Denotation of types
@@ -25,6 +26,11 @@ _＆_ : 𝒞⟦ Γ ⟧ → 𝒯⟦ T ⟧ → 𝒞⟦ Γ ﹐ T ⟧
 (_ ＆ a)  here     = a
 (ρ ＆ _) (there i) = ρ i
 
+-- Appending denoted contexts
+_＆＆_ : 𝒞⟦ Γ ⟧ → 𝒞⟦ Δ ⟧ → 𝒞⟦ Γ ◇ Δ ⟧
+_＆＆_ {Δ = ∅}     p q = p
+_＆＆_ {Δ = Δ ﹐ T} p q = (p ＆＆ (q ∘ there)) ＆ q here
+
 -- Denotation of terms
 ℰ⟦_⟧ : Γ ⊢ T → 𝒞⟦ Γ ⟧ → 𝒯⟦ T ⟧
 ℰ⟦ ` i ⟧        ρ = ρ i
@@ -37,7 +43,7 @@ _＆_ : 𝒞⟦ Γ ⟧ → 𝒯⟦ T ⟧ → 𝒞⟦ Γ ﹐ T ⟧
 mutual
   -- Denotation of environments
   𝒢⟦_⟧ : Env Γ → 𝒞⟦ Γ ⟧
-  𝒢⟦ γ ⟧ x = 𝒟⟦ γ x ⟧
+  𝒢⟦ γ ⟧ {T} i = 𝒟⟦ γ T i ⟧
 
   -- Denotation of domain elements
   𝒟⟦_⟧ : Domain T → 𝒯⟦ T ⟧
@@ -48,4 +54,3 @@ mutual
 -- Denotational equivalence
 _ℰ≡_ : Γ ⊢ T → Γ ⊢ T → 𝒰
 _ℰ≡_ {Γ} t v = ∀ {ρ : 𝒞⟦ Γ ⟧} → ℰ⟦ t ⟧ ρ ＝ ℰ⟦ v ⟧ ρ
-

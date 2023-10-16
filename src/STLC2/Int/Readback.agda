@@ -35,9 +35,7 @@ inject (⁇ r ↑ s ↓ t) = ⁇ inject r ↑ inject s ↓ inject t
 split : Γ ◇ Δ ∋ T → (Γ ∋ T) ⊎ (Δ ∋ T)
 split {Δ = ∅}      i        = inl i
 split {Δ = Δ ﹐ _}  here     = inr here
-split {Δ = Δ ﹐ _} (there i) with split {Δ = Δ} i
-... | inl j = inl j
-... | inr k = inr (there k)
+split {Δ = Δ ﹐ _} (there i) = [ inl , inr ∘ there ]ᵤ (split {Δ = Δ} i)
 
 -- Reading back a normal form from the evaluation of
 -- a term. We truly "close" a closure in reading it
@@ -51,12 +49,12 @@ mutual
 -- Note that this operation is essentially a
 -- substitution
   close : Env Γ → Γ ◇ Δ ⊢ T → Δ ⊢ T
-  close {Γ} γ (` i)         with split {Γ} i
-  ...                       | inl j with γ j ⇑
-  ...                               | t = inject t
-  close {Γ} γ (` i)         | inr k = ` k
-  close     γ (ƛ t)         = ƛ close γ t
-  close     γ (r · s)       = close γ r · close γ s
-  close     γ  𝓉            = 𝓉
-  close     γ  𝒻            = 𝒻
-  close     γ (⁇ r ↑ s ↓ t) = ⁇ close γ r ↑ close γ s ↓ close γ t
+  close {Γ} {T} γ (` i)         with split {Γ} i
+  ...                           | inl j with γ T j ⇑
+  ...                                   | t = inject t
+  close         γ (` i)         | inr k = ` k
+  close         γ (ƛ t)         = ƛ close γ t
+  close         γ (r · s)       = close γ r · close γ s
+  close         γ  𝓉            = 𝓉
+  close         γ  𝒻            = 𝒻
+  close         γ (⁇ r ↑ s ↓ t) = ⁇ close γ r ↑ close γ s ↓ close γ t

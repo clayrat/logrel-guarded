@@ -2,7 +2,9 @@ module STLC2.Int.TyTerm where
 
 open import Prelude
 open import Data.Empty
+open import Data.Unit
 open import Data.List
+open import Structures.IdentitySystem
 
 infix  4  _∋_
 infix  4  _⊢_
@@ -18,6 +20,34 @@ infix  9 `_
 data Ty : 𝒰 where
   𝟚   : Ty
   _⇒_ : Ty → Ty → Ty
+
+module Ty-path-code where
+
+  Ty-code : Ty → Ty → 𝒰
+  Ty-code  𝟚         𝟚        = ⊤
+  Ty-code  𝟚        (_ ⇒ _)   = ⊥
+  Ty-code (_ ⇒ _)    𝟚        = ⊥
+  Ty-code (S₁ ⇒ T₁) (S₂ ⇒ T₂) = Ty-code S₁ S₂ × Ty-code T₁ T₂
+
+  Ty-code-refl : (t : Ty) → Ty-code t t
+  Ty-code-refl  𝟚      = tt
+  Ty-code-refl (S ⇒ T) = Ty-code-refl S , Ty-code-refl T
+
+  Ty-decode : ∀ {t₁ t₂} → Ty-code t₁ t₂ → t₁ ＝ t₂
+  Ty-decode {t₁ = 𝟚}  {t₂ = 𝟚}   _        = refl
+  Ty-decode {S₁ ⇒ T₁} {S₂ ⇒ T₂} (eS , eT) = ap² _⇒_ (Ty-decode eS) (Ty-decode eT)
+
+  Ty-code-prop : ∀ t₁ t₂ → is-prop (Ty-code t₁ t₂)
+  Ty-code-prop  𝟚         𝟚        = hlevel!
+  Ty-code-prop  𝟚        (_ ⇒ _)   = hlevel!
+  Ty-code-prop (_ ⇒ _)    𝟚        = hlevel!
+  Ty-code-prop (S₁ ⇒ T₁) (S₂ ⇒ T₂) = ×-is-of-hlevel 1 (Ty-code-prop S₁ S₂) (Ty-code-prop T₁ T₂)
+
+  Ty-identity-system : is-identity-system Ty-code Ty-code-refl
+  Ty-identity-system = set-identity-system Ty-code-prop Ty-decode
+
+Ty-is-set : is-set Ty
+Ty-is-set = identity-system→is-of-hlevel 1 Ty-path-code.Ty-identity-system Ty-path-code.Ty-code-prop
 
 -- contexts
 
@@ -40,6 +70,9 @@ Ctx-≃ = ff , iso gg ri li
   li : gg is-left-inverse-of ff
   li ∅          = refl
   li (c ﹐ t) = ap (_﹐ t) (li c)
+
+Ctx-is-set : is-set Ctx
+Ctx-is-set = iso→is-of-hlevel 2 Ctx-≃ (list-is-of-hlevel 0 Ty-is-set)
 
 -- de Brujin indices
 
