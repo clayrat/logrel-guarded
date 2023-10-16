@@ -6,7 +6,7 @@ open import Data.Bool
 open import Interlude
 open import STLC2.Int.TyTerm
 open import STLC2.Int.OpSem
-open import STLC2.Int.Readback
+open import STLC2.Int.Norm
 
 private variable
   Γ Δ : Ctx
