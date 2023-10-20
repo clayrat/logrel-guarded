@@ -21,7 +21,6 @@ mutual
 
   -- Domain of evaluation
   data Domain : 𝒰 where
-    ⟨𝓉𝓉⟩  : Domain
   -- Closures
     ⟨ƛ_⟩_ : Term → Env → Domain
   -- Neutral domain elements
@@ -42,8 +41,6 @@ _＋＋_ : Env → Domain → Env
 -- Evaluation of terms
 mutual
   data _∣_⇓_ : Env → Term → Domain → 𝒰 where
-    ⇓𝓉𝓉 : ∀ {γ}
-        → γ ∣ 𝓉𝓉 ⇓ ⟨𝓉𝓉⟩
     ⇓`  : ∀ {γ i}
         → γ ∣ ` i ⇓ γ i
     ⇓ƛ  : ∀ {γ t}

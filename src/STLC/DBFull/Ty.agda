@@ -8,8 +8,8 @@ open import Data.List
 
 open import STLC.DBFull.Term
 
-infix  4  _∋_⦂_
-infix  4  _⊢_⦂_
+infix  4 _∋_⦂_
+infix  4 _⊢_⦂_
 infixl 5 _﹐_
 infixr 7 _⇒_
 
@@ -61,11 +61,6 @@ data _∋_⦂_ : Ctx → ℕ → Ty → 𝒰 where
 
 data _⊢_⦂_ : Ctx → Term → Ty → 𝒰 where
 
-  -- Unit
-  ⊢𝓉𝓉 : ∀ {Γ}
-      -----------
-    → Γ ⊢ 𝓉𝓉 ⦂ 𝟙
-
   -- Axiom
   ⊢` : ∀ {Γ x A}
     → Γ ∋ x ⦂ A
@@ -84,4 +79,3 @@ data _⊢_⦂_ : Ctx → Term → Ty → 𝒰 where
     → Γ ⊢ M ⦂ A
       -------------
     → Γ ⊢ L · M ⦂ B
-

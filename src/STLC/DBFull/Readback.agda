@@ -2,7 +2,7 @@ module STLC.DBFull.Readback where
 
 open import Prelude
 open import Data.Empty
-open import Data.Nat hiding (_·_) 
+open import Data.Nat hiding (_·_)
 open import Data.List
 
 open import STLC.DBFull.Term
@@ -17,7 +17,6 @@ mutual
 
 -- Reading back a normal term
   data _∣_⇑_ : ℕ → Domain → Term → 𝒰 where
-    ⇑⟨𝓉𝓉⟩ : ∀ {n} → n ∣ ⟨𝓉𝓉⟩ ⇑ 𝓉𝓉
     ⇑⟨ƛ⟩  : ∀ {γ n t a v}
          → γ ＋＋ ⟨ lvl n ⟩ⁿᵉ ∣ t ⇓ a
          → n ∣ a ⇑ v
@@ -33,4 +32,3 @@ mutual
          → n ∣ e ⇑ⁿᵉ u
          → n ∣ d ⇑ v
          → n ∣ (e ·ⁿᵉ d) ⇑ⁿᵉ (u · v)
-
