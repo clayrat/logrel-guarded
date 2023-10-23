@@ -36,10 +36,10 @@ mapᵖ f (later p) = later λ α → mapᵖ f (p α)
 -- mapᵖ f p = p >>=ᵖ (now ∘ f)
 
 apᵖ : Part (A → B) → Part A → Part B
-apᵖ (now f)    (now a)    = now (f a)
-apᵖ (now f)    (later pa) = later λ α → apᵖ (now f) (pa α)
-apᵖ (later pf) (now a)    = later λ α → apᵖ (pf α) (now a)
-apᵖ (later pf) (later pa) = later λ α → later (λ α₁ → apᵖ (pf α) (pa α₁))
+apᵖ (now f)     (now a)     = now (f a)
+apᵖ (now f)     (later pa▹) = later λ α → apᵖ (now f) (pa▹ α)
+apᵖ (later pf▹) (now a)     = later λ α → apᵖ (pf▹ α) (now a)
+apᵖ (later pf▹) (later pa▹) = later λ α → apᵖ (pf▹ α) (pa▹ α)
 -- apᵖ pf pa = pf >>=ᵖ λ f → pa >>=ᵖ (now ∘ f)
 
 map²ᵖ : (A → B → C) → Part A → Part B → Part C
@@ -74,7 +74,7 @@ raceᵖ : Part A → Part A → Part A
 raceᵖ = fix raceᵖ-body
 
 bothᵖ : Part A → Part B → Part (A × B)
-bothᵖ = map²ᵖ (_,_)
+bothᵖ = map²ᵖ _,_
 
 Part▹-body : (A → ▹ B) → ▹ (Part A  → ▹ Part B) → Part A → ▹ Part B
 Part▹-body f P▹ (now a)    = ▹map now (f a)
