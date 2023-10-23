@@ -1,12 +1,12 @@
-module STLC.Ext.Ty where
+module STLC1.Ext.Ty where
 
-open import Prelude
+open import Prelude hiding (_⊆_)
 open import Data.Empty
 open import Data.Dec
 open import Data.String
 open import Data.List
 
-open import STLC.Ext.Term
+open import STLC1.Ext.Term
 
 infix  4  _∋_⦂_
 infix  4  _⊢_⦂_
@@ -21,17 +21,17 @@ data Ty : 𝒰 where
 
 -- context
 
-data Context : 𝒰 where
-  ∅     : Context
-  _,_⦂_ : Context → Id → Ty → Context
+data Ctx : 𝒰 where
+  ∅    : Ctx
+  _,_⦂_ : Ctx → Id → Ty → Ctx
 
-Context-≃ : Iso Context (List (Id × Ty))
+Context-≃ : Iso Ctx (List (Id × Ty))
 Context-≃ = ff , iso gg ri li
   where
-  ff : Context → List (Id × Ty)
+  ff : Ctx → List (Id × Ty)
   ff ∅          = []
   ff (c , i ⦂ t) = (i , t) ∷ ff c
-  gg : List (Id × Ty) → Context
+  gg : List (Id × Ty) → Ctx
   gg []            = ∅
   gg ((i , t) ∷ l) = gg l , i ⦂ t
   ri : gg is-right-inverse-of ff
@@ -43,7 +43,7 @@ Context-≃ = ff , iso gg ri li
 
 -- lookup and context inclusion
 
-data _∋_⦂_ : Context → Id → Ty → 𝒰 where
+data _∋_⦂_ : Ctx → Id → Ty → 𝒰 where
 
   here : ∀ {Γ x A}
       ------------------
@@ -58,7 +58,7 @@ data _∋_⦂_ : Context → Id → Ty → 𝒰 where
 ∅-empty : ∀ {x A} → ¬ (∅ ∋ x ⦂ A)
 ∅-empty ()
 
-_⊆_ : Context → Context → 𝒰
+_⊆_ : Ctx → Ctx → 𝒰
 _⊆_ Γ₁ Γ₂ = ∀ t i → Γ₁ ∋ i ⦂ t → Γ₂ ∋ i ⦂ t
 
 ⊆-∅ : ∀ {Γ} → ∅ ⊆ Γ
@@ -80,7 +80,7 @@ _⊆_ Γ₁ Γ₂ = ∀ t i → Γ₁ ∋ i ⦂ t → Γ₂ ∋ i ⦂ t
 
 -- typing judgement
 
-data _⊢_⦂_ : Context → Term → Ty → 𝒰 where
+data _⊢_⦂_ : Ctx → Term → Ty → 𝒰 where
 
   -- Unit
   ⊢𝓉𝓉 : ∀ {Γ}
@@ -132,49 +132,3 @@ swap : ∀ {Γ x y M A B C}
     --------------------------
   → Γ , x ⦂ A , y ⦂ B ⊢ M ⦂ C
 swap {Γ} {x} {y} {M} {A} {B} {C} x≠y ⊢M = weaken (⊆-exch x≠y) ⊢M
-
--- substitution preserves typing
-
-subst-ty : ∀ {Γ x N V A B}
-  → ∅ ⊢ V ⦂ A
-  → Γ , x ⦂ A ⊢ N ⦂ B
-    --------------------
-  → Γ ⊢ N [ x := V ] ⦂ B
-subst-ty                 ⊢V  ⊢𝓉𝓉 = ⊢𝓉𝓉
-subst-ty {Γ} {x = y}     ⊢V (⊢` {x} here) with x ≟ y
-... | yes _   = weaken-∅ Γ ⊢V
-... | no  x≠y = absurd (x≠y refl)
-subst-ty {x = y}         ⊢V (⊢` {x} (there x≠y ∋x)) with x ≟ y
-... | yes eq  = absurd (x≠y eq)
-... | no  _   = ⊢` ∋x
-subst-ty {Γ} {x = y} {A} ⊢V (⊢ƛ {x} {N} {A = C} {B} ⊢N) with x ≟ y
-... | yes eq  = ⊢ƛ (drop (subst (λ n → Γ , n ⦂ A , x ⦂ C ⊢ N ⦂ B) (sym eq) ⊢N))
-... | no  x≠y = ⊢ƛ (subst-ty ⊢V (swap x≠y ⊢N))
-subst-ty                 ⊢V (⊢L ⊢· ⊢M) = (subst-ty ⊢V ⊢L) ⊢· (subst-ty ⊢V ⊢M)
-
--- preservation
-
-preserve : ∀ {M N A}
-  → ∅ ⊢ M ⦂ A
-  → M —→ N
-    ----------
-  → ∅ ⊢ N ⦂ A
-preserve (⊢` ())
-preserve (⊢ƛ ⊢N)           ()
-preserve (⊢L ⊢· ⊢M)       (ξ-·₁ L→L′)   = (preserve ⊢L L→L′) ⊢· ⊢M
-preserve (⊢L ⊢· ⊢M)       (ξ-·₂ _ M→M′) = ⊢L ⊢· (preserve ⊢M M→M′)
-preserve ((⊢ƛ ⊢N) ⊢· ⊢V) (β-ƛ _)       = subst-ty ⊢V ⊢N
-
--- context invariance
-
-free-in-ctx : ∀ {w M A Γ} → afi w M → Γ ⊢ M ⦂ A → Σ[ B ꞉ Ty ] (Γ ∋ w ⦂ B)
-free-in-ctx afi-var      (⊢` {A} p) = A , p
-free-in-ctx {w} (afi-abs ne a) (⊢ƛ {x} ⊢N) with (free-in-ctx a ⊢N)
-... | B , here = absurd (ne refl)
-... | B , there _ p = B , p
-free-in-ctx (afi-appl a) (⊢L ⊢· _) = free-in-ctx a ⊢L
-free-in-ctx (afi-appr a) (_ ⊢· ⊢M) = free-in-ctx a ⊢M
-
-∅⊢-closed : ∀ {M A} → ∅ ⊢ M ⦂ A → closed M
-∅⊢-closed ⊢M i a with (free-in-ctx a ⊢M)
-... | (B , p) = ∅-empty p

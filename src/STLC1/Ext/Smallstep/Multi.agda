@@ -1,4 +1,4 @@
-module STLC.Ext.Multi where
+module STLC1.Ext.Smallstep.Multi where
 
 open import Prelude
 open import Data.Empty
@@ -9,8 +9,9 @@ open import Data.List.Correspondences.Unary.All
 open import Data.String
 
 open import Interlude
-open import STLC.Ext.Term
-open import STLC.Ext.Ty
+open import STLC1.Ext.Term
+open import STLC1.Ext.Ty
+open import STLC1.Ext.Smallstep.Step
 
 -- multisubstitution
 
@@ -73,7 +74,7 @@ msubst-app ((y , t) ∷ ss) t1 t2 = msubst-app ss (t1 [ y := t ]) (t2 [ y := t ]
 Tass : 𝒰
 Tass = List (String × Ty)
 
-mupdate : Tass → Context → Context
+mupdate : Tass → Ctx → Ctx
 mupdate []              Γ = Γ
 mupdate ((x , v) ∷ xts) Γ = (mupdate xts Γ) , x ⦂ v
 

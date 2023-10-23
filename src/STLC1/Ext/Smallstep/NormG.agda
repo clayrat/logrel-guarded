@@ -1,7 +1,7 @@
 {-# OPTIONS --guarded #-}
-module STLC.Ext.NormG where
+module STLC1.Ext.Smallstep.NormG where
 
-open import Prelude
+open import Prelude hiding (_⊆_)
 open import Data.Empty
 open import Data.Dec
 open import Data.String
@@ -12,9 +12,11 @@ open import Later
 open import Interlude
 open import Guarded.Partial
 
-open import STLC.Ext.Term
-open import STLC.Ext.Ty
-open import STLC.Ext.Multi
+open import STLC1.Ext.Term
+open import STLC1.Ext.Ty
+open import STLC1.Ext.Smallstep.Step
+open import STLC1.Ext.Smallstep.TyStep
+open import STLC1.Ext.Smallstep.Multi
 
 -- guarded version of the R logical relation as data
 
