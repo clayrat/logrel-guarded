@@ -49,11 +49,14 @@ denote-＆-＋＋ {Γ} {T} {S} {δ} {a} = fun-ext go
 
 -- Evaluation of a term injected to an extended context
 -- is equivalent
-{-# TERMINATING #-}  -- TODO something is fishy
 ℰ-inject : (t : Γ ⊢ T) (p : 𝒞⟦ Γ ⟧) (q : 𝒞⟦ Δ ⟧)
          → ℰ⟦ t ⟧ p ＝ ℰ⟦ inject t ⟧ (q ＆＆ p)
-ℰ-inject (` here)      p q = refl
-ℰ-inject (` there i)   p q = ℰ-inject (` i) (p ∘ there) q
+ℰ-inject (` i)         p q = go i p q
+  where
+  go : (i : Γ ∋ T) (p : 𝒞⟦ Γ ⟧) (q : 𝒞⟦ Δ ⟧)
+     → ℰ⟦ ` i ⟧ p ＝ ℰ⟦ inject (` i) ⟧ (q ＆＆ p)
+  go  here     p q = refl
+  go (there i) p q = go i (p ∘ there) q
 ℰ-inject (ƛ t)         p q = fun-ext λ ta → ℰ-inject t (p ＆ ta) q
 ℰ-inject (r · s)       p q =
   subst (λ z → ℰ⟦ r ⟧ p (ℰ⟦ s ⟧ p) ＝ z (ℰ⟦ inject s ⟧ (q ＆＆ p))) (ℰ-inject r p q) $
