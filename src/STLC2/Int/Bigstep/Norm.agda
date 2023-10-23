@@ -1,12 +1,12 @@
-module STLC2.Int.Norm where
+module STLC2.Int.Bigstep.Norm where
 
 open import Prelude
 open import Data.Sum
 
 open import Interlude
 open import STLC2.Int.TyTerm
-open import STLC2.Int.OpSem
-open import STLC2.Int.Total
+open import STLC2.Int.Bigstep.OpSem
+open import STLC2.Int.Bigstep.Total
 
 private variable
   Γ Δ : Ctx

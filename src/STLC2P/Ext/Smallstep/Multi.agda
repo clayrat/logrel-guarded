@@ -1,4 +1,4 @@
-module STLC2P.Ext.Multi where
+module STLC2P.Ext.Smallstep.Multi where
 
 open import Prelude
 open import Data.Empty
@@ -11,6 +11,7 @@ open import Data.String
 open import Interlude
 open import STLC2P.Ext.Term
 open import STLC2P.Ext.Ty
+open import STLC2P.Ext.Smallstep.Step
 
 -- multisubstitution
 

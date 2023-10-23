@@ -1,10 +1,6 @@
-module STLC.DBFull.Term where
+module STLC.ExtDB.Term where
 
 open import Prelude
-open import Data.Empty
-open import Data.Unit
-open import Data.Dec
-open import Data.String
 open import Structures.IdentitySystem
 
 open import Interlude

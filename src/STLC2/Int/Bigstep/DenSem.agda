@@ -1,12 +1,12 @@
-module STLC2.Int.DenSem where
+module STLC2.Int.Bigstep.DenSem where
 
 open import Prelude
 open import Data.Bool
 
 open import Interlude
 open import STLC2.Int.TyTerm
-open import STLC2.Int.OpSem
-open import STLC2.Int.Norm
+open import STLC2.Int.Bigstep.OpSem
+open import STLC2.Int.Bigstep.Norm
 
 private variable
   Γ Δ : Ctx

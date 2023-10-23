@@ -1,13 +1,11 @@
-module STLC.DBFull.Readback where
+module STLC.ExtDB.BigstepFull.Readback where
 
 open import Prelude
-open import Data.Empty
 open import Data.Nat hiding (_·_)
-open import Data.List
 
-open import STLC.DBFull.Term
-open import STLC.DBFull.Ty
-open import STLC.DBFull.OpSem
+open import STLC.ExtDB.Term
+open import STLC.ExtDB.Ty
+open import STLC.ExtDB.BigstepFull.OpSem
 
 -- Converting a de Brujin level to a de Brujin index
 lvl→idx : ℕ → ℕ → ℕ

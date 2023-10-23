@@ -1,4 +1,4 @@
-module STLC2.Int.Total where
+module STLC2.Int.Bigstep.Total where
 
 open import Prelude
 open import Data.Empty
@@ -6,7 +6,7 @@ open import Data.List
 
 open import Interlude
 open import STLC2.Int.TyTerm
-open import STLC2.Int.OpSem
+open import STLC2.Int.Bigstep.OpSem
 
 infix 4 _⊨_
 

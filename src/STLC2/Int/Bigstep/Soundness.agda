@@ -1,4 +1,4 @@
-module STLC2.Int.Soundness where
+module STLC2.Int.Bigstep.Soundness where
 
 open import Prelude
 open import Data.Empty
@@ -7,9 +7,9 @@ open import Data.Sum
 
 open import Interlude
 open import STLC2.Int.TyTerm
-open import STLC2.Int.OpSem
-open import STLC2.Int.Norm
-open import STLC2.Int.DenSem
+open import STLC2.Int.Bigstep.OpSem
+open import STLC2.Int.Bigstep.Norm
+open import STLC2.Int.Bigstep.DenSem
 
 private variable
   Γ Δ : Ctx

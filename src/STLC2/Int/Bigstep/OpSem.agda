@@ -1,4 +1,4 @@
-module STLC2.Int.OpSem where
+module STLC2.Int.Bigstep.OpSem where
 
 open import Prelude
 open import Data.Empty

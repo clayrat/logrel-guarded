@@ -1,11 +1,9 @@
-module STLC.DBFull.OpSem where
+module STLC.ExtDB.BigstepFull.OpSem where
 
 open import Prelude
-open import Data.Empty
-open import Data.List
 
-open import STLC.DBFull.Term
-open import STLC.DBFull.Ty
+open import STLC.ExtDB.Term
+open import STLC.ExtDB.Ty
 
 -- big-step / natural
 

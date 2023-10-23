@@ -1,12 +1,10 @@
-module STLC.DBFull.Ty where
+module STLC.ExtDB.Ty where
 
 open import Prelude
 open import Data.Empty
-open import Data.Dec
-open import Data.String
 open import Data.List
 
-open import STLC.DBFull.Term
+open import STLC.ExtDB.Term
 
 infix  4 _∋_⦂_
 infix  4 _⊢_⦂_

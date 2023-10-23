@@ -1,6 +1,6 @@
-module STLC2P.Ext.Norm where
+module STLC2P.Ext.Smallstep.Norm where
 
-open import Prelude
+open import Prelude hiding (_⊆_)
 open import Data.Empty
 open import Data.Dec
 open import Data.String
@@ -10,7 +10,9 @@ open import Data.List.Correspondences.Unary.All
 open import Interlude
 open import STLC2P.Ext.Term
 open import STLC2P.Ext.Ty
-open import STLC2P.Ext.Multi
+open import STLC2P.Ext.Smallstep.Step
+open import STLC2P.Ext.Smallstep.TyStep
+open import STLC2P.Ext.Smallstep.Multi
 
 --- R logical relation
 

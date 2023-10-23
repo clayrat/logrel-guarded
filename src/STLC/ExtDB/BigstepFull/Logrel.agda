@@ -1,15 +1,14 @@
-module STLC.DBFull.Logrel where
+module STLC.ExtDB.BigstepFull.Logrel where
 
 open import Prelude
 open import Data.Empty
 open import Data.Nat hiding (_·_ ; _^_)
-open import Data.List
 
 open import Interlude
-open import STLC.DBFull.Term
-open import STLC.DBFull.Ty
-open import STLC.DBFull.OpSem
-open import STLC.DBFull.Readback
+open import STLC.ExtDB.Term
+open import STLC.ExtDB.Ty
+open import STLC.ExtDB.BigstepFull.OpSem
+open import STLC.ExtDB.BigstepFull.Readback
 
 LogPred : 𝒰 (ℓsuc 0ℓ)
 LogPred = Domain → 𝒰
