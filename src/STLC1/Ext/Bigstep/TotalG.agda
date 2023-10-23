@@ -91,7 +91,7 @@ fundamental-lemma : ∀ {Γ t T}
                   → Γ ⊢ t ⦂ T
                   → Γ ⊨ t ⦂ T
 fundamental-lemma ⊢𝓉𝓉                                      _  =
-  now (⟨𝓉𝓉⟩ , ⇓𝓉𝓉 , tt)
+  now (⟨𝓉𝓉⟩ , ⇓𝓉𝓉 , ⟦𝟙⟧ {a = ⟨𝓉𝓉⟩})
 fundamental-lemma (⊢` i)                                   ⊨γ =
   let a , x∈γ , sa = ⊨γ i in
   now (a , ⇓` x∈γ , sa)
