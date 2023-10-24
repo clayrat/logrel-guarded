@@ -6,7 +6,7 @@ open import Data.Unit
 open import Data.Dec
 --open import Data.Sum
 open import Data.List
-open import Structures.IdentitySystem
+open import Structures.IdentitySystem hiding (J)
 
 infix  4  _∋_
 infix  4  _⊢_
@@ -182,6 +182,69 @@ data _⊢_ : Ctx → Ty → 𝒰 where
     → Γ ⊢ A
       -------------
     → Γ ⊢ B
+
+module Tm-path-code where
+
+  Code : ∀ {Γ T} → Γ ⊢ T → Γ ⊢ T → 𝒰
+  Code          𝓉𝓉                   𝓉𝓉                  = ⊤
+  Code          𝓉𝓉                  (` x₂)               = ⊥
+  Code          𝓉𝓉                  (r₂ · s₂)            = ⊥
+  Code         (` x₁)                𝓉𝓉                  = ⊥
+  Code         (` x₁)               (` x₂)               = x₁ ＝ x₂
+  Code         (` x₁)               (ƛ t₂)               = ⊥
+  Code         (` x₁)               (r₂ · s₂)            = ⊥
+  Code         (ƛ t₁)               (` x₂)               = ⊥
+  Code         (ƛ t₁)               (ƛ t₂)               = Code t₁ t₂
+  Code         (ƛ t₁)               (r₂ · s₂)            = ⊥
+  Code         (r₁ · s₁)             𝓉𝓉                  = ⊥
+  Code         (r₁ · s₁)            (` x₂)               = ⊥
+  Code         (r₁ · s₁)            (ƛ t₂)               = ⊥
+  Code {Γ} {T} (_·_ {A = A₁} r₁ s₁) (_·_ {A = A₂} r₂ s₂) =
+    Σ[ eA ꞉ (A₁ ＝ A₂) ] (  Code r₁ (subst (λ q → Γ ⊢ q ⇒ T) (sym eA) r₂)
+                         × Code s₁ (subst (Γ ⊢_) (sym eA) s₂))
+
+  code-refl : ∀ {Γ T} → (t : Γ ⊢ T) → Code t t
+  code-refl  𝓉𝓉                   = tt
+  code-refl (` x)                 = refl
+  code-refl (ƛ t)                 = code-refl t
+  code-refl {Γ} {T} (_·_ {A} r s) =
+    refl , subst (Code r) (sym (subst-refl {B = λ q → Γ ⊢ q ⇒ T} r)) (code-refl r)
+         , subst (Code s) (sym (subst-refl {B = Γ ⊢_}            s)) (code-refl s)
+
+  decode : ∀ {Γ T} {t₁ t₂ : Γ ⊢ T} → Code t₁ t₂ → t₁ ＝ t₂
+  decode         {t₁ = 𝓉𝓉}            {(𝓉𝓉)}                c             = refl
+  decode         {t₁ = 𝓉𝓉}            {` x₂}                c             = absurd c
+  decode         {t₁ = 𝓉𝓉}            {r₂ · s₂}             c             = absurd c
+  decode         {t₁ = ` x₁}          {(𝓉𝓉)}                c             = absurd c
+  decode         {t₁ = ` x₁}          {` x₂}                c             = ap `_ c
+  decode         {t₁ = ` x₁}          {ƛ t₂}                c             = absurd c
+  decode         {t₁ = ` x₁}          {r₂ · s₂}             c             = absurd c
+  decode         {t₁ = ƛ t₁}          {` x}                 c             = absurd c
+  decode         {t₁ = ƛ t₁}          {ƛ t₂}                c             = ap ƛ_ (decode c)
+  decode         {t₁ = ƛ t₁}          {r₂ · s₂}             c             = absurd c
+  decode         {t₁ = r₁ · s₁}       {(𝓉𝓉)}                c             = absurd c
+  decode         {t₁ = r₁ · s₁}       {` x₂}                c             = absurd c
+  decode         {t₁ = r₁ · s₁}       {ƛ t₂}                c             = absurd c
+  decode {Γ} {T} {_·_ {A = A₁} r₁ s₁} {_·_ {A = A₂} r₂ s₂} (eA , cr , cs) =
+    J (λ A eA′ → (r : Γ ⊢ A ⇒ T)
+               → (s : Γ ⊢ A)
+               → Code r (subst (λ q → Γ ⊢ q ⇒ T) eA′ r₂)
+               → Code s (subst (_⊢_ Γ) eA′ s₂)
+               → r · s ＝ r₂ · s₂)
+      (λ r s cr′ cs′ → ap² _·_
+                          (decode (subst (Code r) (subst-refl {B = λ q → Γ ⊢ q ⇒ T} r₂) cr′))
+                          (decode (subst (Code s) (subst-refl {B = Γ ⊢_} s₂) cs′)))
+      (sym eA)
+      r₁ s₁ cr cs
+
+  encode : ∀ {Γ T} {t₁ t₂ : Γ ⊢ T} → t₁ ＝ t₂ → Code t₁ t₂
+  encode {Γ} {T} {t₁} {t₂} e = subst (Code t₁) e (code-refl t₁)
+
+𝓉𝓉≠` : ∀ {Γ x} → 𝓉𝓉 {Γ} ≠ ` x
+𝓉𝓉≠` = Tm-path-code.encode
+
+𝓉𝓉≠· : ∀ {Γ T r s} → 𝓉𝓉 {Γ} ≠ _·_ {A = T} r s
+𝓉𝓉≠· = Tm-path-code.encode
 
 {-
 -- Context append
