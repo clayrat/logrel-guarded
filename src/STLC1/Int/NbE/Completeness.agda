@@ -9,7 +9,7 @@ open import STLC1.Int.NbE.Norm
 open import STLC1.Int.NbE.DefEq
 
 _⊩ʳ_~_ : ∀ {Γ Δ : Ctx} → ⟦ Γ ⟧ᶜ → Ren Γ Δ → ⟦ Δ ⟧ᶜ → 𝒰
-_⊩ʳ_~_ {Δ} γ ρ δ = ∀ {T : Ty} (x : Δ ∋ T) → env-lookup (ρ x) γ ＝ env-lookup x δ
+_⊩ʳ_~_ {Δ} γ ρ δ = ∀ {T : Ty} (x : Δ ∋ T) → env-lookup (ρ T x) γ ＝ env-lookup x δ
 
 rename-preserves-meaning : ∀ {Γ Δ : Ctx} {T : Ty} {γ : ⟦ Γ ⟧ᶜ} {δ : ⟦ Δ ⟧ᶜ}
                              {t : Δ ⊢ T} {ρ : Ren Γ Δ}
@@ -22,7 +22,7 @@ rename-preserves-meaning {Δ} {S ⇒ T} {γ} {δ} {t = ƛ t}   {ρ} pf =
   where
   go : {a : ⟦ S ⟧ᵗ} {T : Ty}
      → (x : Δ ﹐ S ∋ T)
-     → env-lookup (ext ρ x) (γ , a) ＝ env-lookup x (δ , a)
+     → env-lookup (ext ρ T x) (γ , a) ＝ env-lookup x (δ , a)
   go  here     = refl
   go (there x) = pf x
 rename-preserves-meaning             {γ} {δ} {t = r · s} {ρ} pf =
@@ -31,15 +31,15 @@ rename-preserves-meaning             {γ} {δ} {t = r · s} {ρ} pf =
 
 _⊩_~_ : ∀ {Γ Δ : Ctx}
       → ⟦ Γ ⟧ᶜ → Sub Γ Δ → ⟦ Δ ⟧ᶜ → 𝒰
-_⊩_~_ {Δ} γ σ δ = ∀ {T : Ty} (x : Δ ∋ T) → ⟦⊢ σ x ⟧ γ ＝ env-lookup x δ
+_⊩_~_ {Δ} γ σ δ = ∀ {T : Ty} (x : Δ ∋ T) → ⟦⊢ σ T x ⟧ γ ＝ env-lookup x δ
 
 subst-exts : ∀ {Γ Δ : Ctx} {S : Ty} {γ : ⟦ Γ ⟧ᶜ} {a : ⟦ S ⟧ᵗ} {σ : Sub Γ Δ}
                {δ : ⟦ Δ ⟧ᶜ}
            → γ ⊩ σ ~ δ
            → (γ , a) ⊩ exts σ ~ (δ , a)
-subst-exts     pf  here     = refl
-subst-exts {σ} pf (there x) =
-  rename-preserves-meaning {t = σ x} (λ _ → refl) ∙ pf x
+subst-exts     pf      here      = refl
+subst-exts {σ} pf {T} (there x)  =
+  rename-preserves-meaning {t = σ T x} (λ _ → refl) ∙ pf x
 
 subst-preserves-meaning : ∀ {Γ Δ : Ctx} {T : Ty} {γ : ⟦ Γ ⟧ᶜ} {δ : ⟦ Δ ⟧ᶜ}
                             {σ : Sub Γ Δ} {t : Δ ⊢ T}
@@ -63,7 +63,7 @@ subst-preserves-meaning {γ} {δ} {σ} {t = r · s} pf =
   is = ⟦⊢ s ⟧ γ
   go : ∀ {T : Ty}
      → (x : Γ ﹐ S ∋ T)
-     → ⟦⊢ (idˢ ∷ˢ s) x ⟧ γ ＝ env-lookup x (γ , is)
+     → ⟦⊢ (idˢ ∷ˢ s) T x ⟧ γ ＝ env-lookup x (γ , is)
   go  here     = refl
   go (there x) = refl
 

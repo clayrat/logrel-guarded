@@ -2,8 +2,8 @@ module STLC1.Int.NbE.Norm where
 
 open import Prelude hiding ([_])
 open import Data.Empty
-open import Data.Dec
-open import Data.Maybe
+open import Data.Dec renaming (rec to recᵈ)
+open import Data.Maybe renaming (rec to recᵐ; map to mapᵐ)
 
 open import STLC1.Int.TyTerm
 open import STLC1.Int.NbE.CtxExt
@@ -46,10 +46,10 @@ Nf^ : Ty → 𝒰
 Nf^ T = ∀ (Γ : Ctx) → Σ[ t ꞉ Γ ⊢ T ] Nf T Γ t
 
 _·^_ : ∀ {S T : Ty} → Ne^ (S ⇒ T) → Nf^ S → Ne^ T
-(𝓊̂ ·^ 𝓋̂) Γ with 𝓊̂ Γ
-... | just (𝓊 , pf𝓊) = let 𝓋 , pf𝓋 = 𝓋̂ Γ in
-                        just (𝓊 · 𝓋 , ne-· pf𝓊 pf𝓋)
-... | nothing = nothing
+(𝓊̂ ·^ 𝓋̂) Γ =
+  mapᵐ (let 𝓋 , pf𝓋 = 𝓋̂ Γ in
+          bimap (_· 𝓋) (λ pf𝓊 → ne-· pf𝓊 pf𝓋))
+       (𝓊̂ Γ)
 
 data ⊤̂ : 𝒰 where
   unit : ⊤̂
@@ -75,15 +75,14 @@ env-lookup (there x) (γ , _) = env-lookup x γ
 
 ↓⊤̂ : ⟦ 𝟙 ⟧ᵗ → Nf^ 𝟙
 ↓⊤̂  unit   _ = 𝓉𝓉 , nf-𝓉𝓉
-↓⊤̂ (ne 𝓊̂) Γ with 𝓊̂ Γ
-... | just (𝓊 , pf) = 𝓊 , nf-ne pf
-... | nothing        = 𝓉𝓉 , nf-𝓉𝓉
+↓⊤̂ (ne 𝓊̂) Γ = recᵐ (𝓉𝓉 , nf-𝓉𝓉) (second nf-ne) (𝓊̂ Γ)
 
 𝓍̂ : (S : Ty) → Ctx → Ne^ S
-𝓍̂ S Γ Γ′ with Γ′ ≤? (Γ ﹐ S)
-...  | no _   = nothing
-...  | yes pf = let x = ρ-≤ pf here in
-                just (` x , ne-` x)
+𝓍̂ S Γ Γ′ =
+  recᵈ (λ pf → let x = ρ-≤ pf S here in
+               just (` x , ne-` x))
+       (λ _ → nothing)
+       (Γ′ ≤? (Γ ﹐ S))
 
 mutual
   ↑ᵀ : {T : Ty} → Ne^ T → ⟦ T ⟧ᵗ

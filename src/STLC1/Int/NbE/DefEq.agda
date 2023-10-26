@@ -114,7 +114,7 @@ cong⁼⁼-sub {Γ} {T = S ⇒ T} {t} {σ}  η                       =
     (abs-compat
       (app-compat
          (＝→== (  sub-sub {τ = ↥} {σ} {t}
-                 ∙ cong-sub {t = t} (fun-ext (λ _ → sym rename-shift)) refl
+                 ∙ cong-sub {t = t} (fun-ext λ _ → fun-ext λ _ → sym rename-shift) refl
                  ∙ sym (sub-sub {τ = exts σ} {↥ {T = S}} {t})
                  ))
          refl⁼⁼))

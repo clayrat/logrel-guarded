@@ -20,6 +20,9 @@ data _≤_ : Ctx → Ctx → 𝒰 where
           ----------
         → Γ ﹐ T ≤ Δ
 
+≤-id⁰ : ∀ {Γ} → Γ ≤ Γ
+≤-id⁰ = ≤-id refl
+
 ¬∅≤, : ∀ {Γ T} → ¬ (∅ ≤ Γ ﹐ T)
 ¬∅≤, (≤-id e) = ∅≠, e
 
@@ -31,7 +34,7 @@ invert-≤ : ∀ {Γ Δ : Ctx} {T : Ty}
          → Γ ≤ Δ ﹐ T
            ----------
          → Γ ≤ Δ
-invert-≤ {Δ} (≤-id e)  = subst (_≤ Δ) (sym e) (≤-ext (≤-id refl))
+invert-≤ {Δ} (≤-id e)  = subst (_≤ Δ) (sym e) (≤-ext ≤-id⁰)
 invert-≤     (≤-ext p) = ≤-ext (invert-≤ p)
 
 mutual
@@ -48,7 +51,7 @@ mutual
     ∙ ap (Δ ﹐_) (≤-ext-uniq-T p2 (subst (_≤ Γ ﹐ S) Γ=Δ (subst (λ q → Γ ≤ q ﹐ S) (sym Γ=Δ) p1)))
 
   Γ≰Γ,T : ∀ {Γ : Ctx} {T : Ty} → ¬ (Γ ≤ Γ ﹐ T)
-  Γ≰Γ,T {Γ} {T} Γ≤Γ,T = absurd (Ctx-ne-ext $ ≤-antisym Γ≤Γ,T $ ≤-ext {T = T} (≤-id refl))
+  Γ≰Γ,T {Γ} {T} Γ≤Γ,T = absurd (Ctx-ne-ext $ ≤-antisym Γ≤Γ,T $ ≤-ext {T = T} ≤-id⁰)
 
   ≤-ext-uniq-T : ∀ {Γ Δ : Ctx} {S T : Ty}
                → Δ ≤ Γ ﹐ T
@@ -78,6 +81,14 @@ mutual
 ≤-trans {Φ} (≤-id e1)  (≤-ext ΔΦ) = subst (_≤ Φ) (sym e1) (≤-ext ΔΦ)
 ≤-trans {Γ} (≤-ext ΓΔ) (≤-id e2)  = subst (Γ ≤_) e2 (≤-ext ΓΔ)
 ≤-trans     (≤-ext ΓΔ) (≤-ext ΔΦ) = ≤-ext (≤-trans ΓΔ (≤-ext ΔΦ))
+
+≤-trans-id-l : ∀ {Γ Δ : Ctx} {ΓΔ : Γ ≤ Δ} → ≤-trans ≤-id⁰ ΓΔ ＝ ΓΔ
+≤-trans-id-l     {ΓΔ = ≤-id e}   = ap ≤-id (∙-id-l e)
+≤-trans-id-l {Δ} {ΓΔ = ≤-ext ΓΔ} = subst-refl {B = _≤ Δ} (≤-ext ΓΔ)
+
+≤-trans-id-r : ∀ {Γ Δ : Ctx} {ΓΔ : Γ ≤ Δ} → ≤-trans ΓΔ ≤-id⁰ ＝ ΓΔ
+≤-trans-id-r                 {ΓΔ = ≤-id e}           = ap ≤-id (∙-id-r e)
+≤-trans-id-r {Γ = .(Γ ﹐ T)} {ΓΔ = ≤-ext {Γ} {T} ΓΔ} = subst-refl {B = Γ ﹐ T ≤_} (≤-ext ΓΔ)
 
 _≤?_ : ∀ (Γ Δ : Ctx) → Dec (Γ ≤ Δ)
 ∅       ≤?    ∅      = yes (≤-id refl)
