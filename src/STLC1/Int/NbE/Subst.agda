@@ -34,7 +34,7 @@ _∘ʳ_ : ∀ {Γ Δ Σ : Ctx} → Ren Δ Γ → Ren Σ Δ → Ren Σ Γ
 ρ ∘ʳ ω = ω ∘ ρ
 
 ρ-≤ : ∀ {Γ Δ : Ctx} → Γ ≤ Δ → Ren Γ Δ
-ρ-≤ {Γ} (≤-id  e)  {T} = subst (λ q → q ∋ T → Γ ∋ T) e idʳ
+ρ-≤ {Γ} (≤-id  e)  {T} = subst (Ren Γ) e idʳ
 ρ-≤     (≤-ext pf)     = ρ-≤ pf ∘ʳ ↥ʳ
 
 ext : ∀ {Γ Δ : Ctx} → Ren Γ Δ → ∀ {T : Ty} → Ren (Γ ﹐ T) (Δ ﹐ T)
@@ -292,3 +292,31 @@ subst-zero-exts-cons {S = S} {T} {σ} {s} =
     ＝⟨ cong-cons refl (sub-idR {σ = σ}) ⟩
   σ ∷ˢ s
     ∎
+
+compose-ρ-≤ : ∀ {Γ″ Γ′ Γ : Ctx} {T : Ty}
+            → (Γ″≤Γ′ : Γ″ ≤ Γ′)
+            → (Γ′≤Γ : Γ′ ≤ Γ)
+            → (x : Γ ∋ T)
+            → ρ-≤ Γ″≤Γ′ (ρ-≤ Γ′≤Γ x) ＝ ρ-≤ (≤-trans Γ″≤Γ′ Γ′≤Γ) x
+compose-ρ-≤ {Γ″}          {Γ′}              {T} (≤-id e″)                    (≤-id e′)                    x =
+  J² (λ Γ₁ e₁ Γ₀ e₀ → (x₀ : Γ₀ ∋ T) →
+        subst (Ren Γ″) e₁ idʳ (subst (Ren Γ₁) e₀ idʳ x₀) ＝ subst (Ren Γ″) (e₁ ∙ e₀) idʳ x₀)
+     (λ x₀ →   ap (λ q → subst (Ren Γ″) refl idʳ (q x₀)) (subst-refl {B = Ren Γ″} idʳ)
+             ∙ ap (λ q → q x₀) (subst-refl {B = Ren Γ″} idʳ)
+             ∙ ap (λ q → q x₀) (sym (subst-refl {B = Ren Γ″} idʳ))
+             ∙ ap (λ q → subst (Ren Γ″) q idʳ x₀) (sym (∙-id-r refl)))
+     e″ e′ x
+compose-ρ-≤ {Γ″}          {.(Γ′ ﹐ T′)} {Γ}     (≤-id e)                     (≤-ext {Γ = Γ′} {T = T′} pf) x =
+  J (λ Γ₂ e₂ →
+       subst (Ren Γ₂) (sym e₂) idʳ ((ρ-≤ pf ∘ʳ ↥ʳ) x) ＝ ρ-≤ (subst (_≤ Γ) e₂ (≤-ext pf)) x)
+    (  ap (λ q → q ((ρ-≤ pf ∘ʳ ↥ʳ) x)) (subst-refl {B = Ren (Γ′ ﹐ T′)} idʳ)
+     ∙ ap (λ q → ρ-≤ q x) (sym (subst-refl {B = _≤ Γ} (≤-ext pf))))
+    (sym e)
+compose-ρ-≤ {.(Γ″ ﹐ T″)} {Γ′}          {Γ} {T} (≤-ext {Γ = Γ″} {T = T″} pf) (≤-id e)                     x =
+  J (λ Γ₀ e₀ → (x₀ : Γ₀ ∋ T) →
+       (ρ-≤ pf ∘ʳ ↥ʳ) (subst (Ren Γ′) e₀ idʳ x₀) ＝ ρ-≤ (subst (Γ″ ﹐ T″ ≤_) e₀ (≤-ext pf)) x₀)
+    (λ x₀ →   ap (λ q → (ρ-≤ pf ∘ʳ ↥ʳ {T = T″}) (q x₀)) (subst-refl {B = Ren Γ′} idʳ)
+            ∙ ap (λ q → ρ-≤ q x₀) (sym (subst-refl {B = Γ″ ﹐ T″ ≤_} (≤-ext pf))))
+    e x
+compose-ρ-≤                                     (≤-ext pf1)                  (≤-ext pf2)                  x =
+  ap there (compose-ρ-≤ pf1 (≤-ext pf2) x)

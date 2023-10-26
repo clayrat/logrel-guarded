@@ -99,3 +99,32 @@ open ==-Reasoning public
         -------
       → t == t′
 ＝→== {t} e = subst (t ==_) e refl⁼⁼
+
+cong⁼⁼-sub : ∀ {Γ Δ : Ctx} {T : Ty} {t t′ : Γ ⊢ T} {σ : Sub Δ Γ}
+          → t == t′
+          → t [ σ ] == t′ [ σ ]
+cong⁼⁼-sub                     {σ} (β {t} {s})              =
+  trans⁼⁼ β
+    (＝→== (sub-sub {t = t}
+            ∙ cong-sub {t = t} (subst-zero-exts-cons ∙ sym sub-dist)
+                                refl
+            ∙ sym (sub-sub {τ = σ} {idˢ ∷ˢ s} {t})))
+cong⁼⁼-sub {Γ} {T = S ⇒ T} {t} {σ}  η                       =
+  trans⁼⁼ η
+    (abs-compat
+      (app-compat
+         (＝→== (  sub-sub {τ = ↥} {σ} {t}
+                 ∙ cong-sub {t = t} (fun-ext (λ _ → sym rename-shift)) refl
+                 ∙ sym (sub-sub {τ = exts σ} {↥ {T = S}} {t})
+                 ))
+         refl⁼⁼))
+cong⁼⁼-sub                         (abs-compat t==t′)       =
+  abs-compat (cong⁼⁼-sub t==t′)
+cong⁼⁼-sub                         (app-compat r==r′ s==s′) =
+  app-compat (cong⁼⁼-sub r==r′) (cong⁼⁼-sub s==s′)
+cong⁼⁼-sub                          refl⁼⁼                   =
+  refl⁼⁼
+cong⁼⁼-sub                         (sym⁼⁼ t′==t)             =
+  sym⁼⁼ (cong⁼⁼-sub t′==t)
+cong⁼⁼-sub                         (trans⁼⁼ t==t₁ t₁==t′)    =
+  trans⁼⁼ (cong⁼⁼-sub t==t₁) (cong⁼⁼-sub t₁==t′)

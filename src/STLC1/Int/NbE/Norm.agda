@@ -79,6 +79,12 @@ env-lookup (there x) (γ , _) = env-lookup x γ
 ... | just (𝓊 , pf) = 𝓊 , nf-ne pf
 ... | nothing        = 𝓉𝓉 , nf-𝓉𝓉
 
+𝓍̂ : (S : Ty) → Ctx → Ne^ S
+𝓍̂ S Γ Γ′ with Γ′ ≤? (Γ ﹐ S)
+...  | no _   = nothing
+...  | yes pf = let x = ρ-≤ pf here in
+                just (` x , ne-` x)
+
 mutual
   ↑ᵀ : {T : Ty} → Ne^ T → ⟦ T ⟧ᵗ
   ↑ᵀ {T = 𝟙}     𝓊̂   = ne 𝓊̂
@@ -89,12 +95,6 @@ mutual
   ↓ᵀ {T = S ⇒ T} f Γ =
     let (𝓋 , pf) = ↓ᵀ (f (↑ᵀ (𝓍̂ S Γ))) (Γ ﹐ S) in
     ƛ 𝓋 , nf-ƛ pf
-
-  𝓍̂ : (S : Ty) → Ctx → Ne^ S
-  𝓍̂ S Γ Γ′ with Γ′ ≤? (Γ ﹐ S)
-  ...  | no _   = nothing
-  ...  | yes pf = let x = ρ-≤ pf here in
-                  just (` x , ne-` x)
 
 ↑ᶜ : ∀ (Γ : Ctx) → ⟦ Γ ⟧ᶜ
 ↑ᶜ  ∅      = tt
