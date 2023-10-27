@@ -245,34 +245,3 @@ module Tm-path-code where
 
 𝓉𝓉≠· : ∀ {Γ T r s} → 𝓉𝓉 {Γ} ≠ _·_ {A = T} r s
 𝓉𝓉≠· = Tm-path-code.encode
-
-{-
--- Context append
-_◇_ : Ctx → Ctx → Ctx
-Δ ◇ ∅       = Δ
-Δ ◇ (Γ ﹐ S) = Δ ◇ Γ ﹐ S
-
--- Inject de Brujin index into larger context
-inject-var : ∀ {Γ Δ T}
-           → Γ ∋ T → Δ ◇ Γ ∋ T
-inject-var  here     = here
-inject-var (there x) = there (inject-var x)
-
--- Inject term into larger context (similar to weakening)
-inject : ∀ {Γ Δ T}
-       → Γ ⊢ T → Δ ◇ Γ ⊢ T
-inject (` i)         = ` inject-var i
-inject (ƛ t)         = ƛ inject t
-inject (r · s)       = inject r · inject s
-inject 𝓉             = 𝓉
-inject 𝒻             = 𝒻
-inject (⁇ r ↑ s ↓ t) = ⁇ inject r ↑ inject s ↓ inject t
-
--- If we have a variable in a injected context
--- we can determine where it came from
-split : ∀ {Γ Δ T}
-      → Γ ◇ Δ ∋ T → (Γ ∋ T) ⊎ (Δ ∋ T)
-split {Δ = ∅}      i        = inl i
-split {Δ = Δ ﹐ _}  here     = inr here
-split {Δ = Δ ﹐ _} (there i) = [ inl , inr ∘ there ]ᵤ (split {Δ = Δ} i)
--}

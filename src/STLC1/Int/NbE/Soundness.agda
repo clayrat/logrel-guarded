@@ -252,6 +252,7 @@ nf-== {Γ} {T} {t} =
             ∙ ap (λ q → (t [ idˢ ]) [ q ]) (sym weaken-id)))
     t==↓ᵀ⟦t⟧↑Γ
 
+-- aka stability
 nf-preserves-meaning : ∀ {Γ : Ctx} {T : Ty} {t : Γ ⊢ T} {γ : ⟦ Γ ⟧ᶜ}
                      → ⟦⊢ t ⟧ γ ＝ ⟦⊢ nf t ⟧ γ
 nf-preserves-meaning {t = t} = ==→⟦＝⟧ (nf-== {t = t})
