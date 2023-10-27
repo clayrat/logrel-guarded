@@ -181,66 +181,64 @@ Q𝓅-covariant : (Q R : Val → ℕ → 𝒰)
              → ∀ v n → Q𝓅 Q v n → Q𝓅 R v n
 Q𝓅-covariant Q R qr v n (x , e , qx) = x , e , qr (v-＃ (pred x)) n qx
 
-Q·-covariant-rec : ▹ (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
+cov-distr : ▹ (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
                       → (M : Term) → (k : ℕ)
                       → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R)
+          → (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
+          → (M : Term) → (k : ℕ)
+          → ▹ (M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R)
+cov-distr cb▹ Q R qr M k = cb▹ ⊛ next Q ⊛ next R ⊛ next qr
+                               ⊛ next M ⊛ next k
+
+Q·-covariant-rec : (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
+                    → (M : Term) → (k : ℕ)
+                    → ▹ (M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R))
                  → (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
                  → (s : Term) → (v : Val) → (n : ℕ)
                  → Q· s Q v n → Q· s R v n
 Q·-covariant-rec cb▹ Q R qr s (v-ƛ x t) n qq =
-  roll-Q· {t} {x} {s} (cb▹ ⊛ next Q ⊛ next R ⊛ next qr
-                           ⊛ next (t [ x := s ]) ⊛ next n
-                           ⊛ unroll-Q· {t} {x} {s} qq)
+  roll-Q· {t} {x} {s}
+          (cb▹ Q R qr (t [ x := s ]) n ⊛ unroll-Q· {t} {x} {s} qq)
 
-Q?-covariant-rec : ▹ (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
-                      → (M : Term) → (k : ℕ)
-                      → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R)
+Q?-covariant-rec : (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
+                    → (M : Term) → (k : ℕ)
+                    → ▹ (M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R))
                  → (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
                  → (s t : Term) → (v : Val) → (n : ℕ)
                  → Q? s t Q v n → Q? s t R v n
 Q?-covariant-rec cb▹ Q R qr s t (v-＃ zero)    n qq =
   roll-Q?0 {s} {t}
-           (cb▹ ⊛ next Q ⊛ next R ⊛ next qr
-                ⊛ next s ⊛ next n
-                ⊛ unroll-Q?0 {s} {t} qq)
+           (cb▹ Q R qr s n ⊛ unroll-Q?0 {s} {t} qq)
 Q?-covariant-rec cb▹ Q R qr s t (v-＃ (suc m)) n qq =
   roll-Q?s {s} {t} {m = n} {n = m}
-           (cb▹ ⊛ next Q ⊛ next R ⊛ next qr
-                ⊛ next t ⊛ next n
-                ⊛ unroll-Q?s {s} {t} {m = n} {n = m} qq)
+           (cb▹ Q R qr t n ⊛ unroll-Q?s {s} {t} {m = n} {n = m} qq)
 
-⇓-covariant-body : ▹ (   (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
-                       → (M : Term) → (k : ℕ)
-                       → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R) →
-                     (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
-                   → (M : Term) → (k : ℕ)
-                   → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R
+⇓-covariant-body : (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
+                    → (M : Term) → (k : ℕ)
+                    → ▹ (M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R))
+                 → (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
+                 → (M : Term) → (k : ℕ)
+                 → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R
 ⇓-covariant-body cb▹ Q R qr (ƛ x ⇒ t)       k      M⇓ =
   qr (v-ƛ x t) k M⇓
 ⇓-covariant-body cb▹ Q R qr (r · s)         k      M⇓ =
-  roll-· (cb▹ ⊛ next (Q· s Q) ⊛ next (Q· s R) ⊛ next (Q·-covariant-rec cb▹ Q R qr s)
-              ⊛ next r ⊛ next k
+  roll-· (cb▹ (Q· s Q) (Q· s R) (Q·-covariant-rec cb▹ Q R qr s) r k
               ⊛ unroll-· M⇓)
 ⇓-covariant-body cb▹ Q R qr (Y t)          (suc k) M⇓ =
-  roll-Y (cb▹ ⊛ next Q ⊛ next R ⊛ next qr
-              ⊛ next (t · Y t) ⊛ next k
-              ⊛ unroll-Y M⇓)
+  roll-Y (cb▹ Q R qr (t · Y t) k ⊛ unroll-Y M⇓)
 ⇓-covariant-body cb▹ Q R qr (＃ n)           k     M⇓ =
   qr (v-＃ n) k M⇓
 ⇓-covariant-body cb▹ Q R qr (𝓈 t)           k      M⇓ =
-  roll-𝓈 {Q = R} (cb▹ ⊛ next (Q𝓈 Q) ⊛ next (Q𝓈 R) ⊛ next (Q𝓈-covariant Q R qr)
-                      ⊛ next t ⊛ next k
+  roll-𝓈 {Q = R} (cb▹ (Q𝓈 Q) (Q𝓈 R) (Q𝓈-covariant Q R qr) t k
                       ⊛ unroll-𝓈 {Q = Q} M⇓)
 ⇓-covariant-body cb▹ Q R qr (𝓅 t)           k      M⇓ =
-  roll-𝓅 {Q = R} (cb▹ ⊛ next (Q𝓅 Q) ⊛ next (Q𝓅 R) ⊛ next (Q𝓅-covariant Q R qr)
-                      ⊛ next t ⊛ next k
+  roll-𝓅 {Q = R} (cb▹ (Q𝓅 Q) (Q𝓅 R) (Q𝓅-covariant Q R qr) t k
                       ⊛ unroll-𝓅 {Q = Q} M⇓)
 ⇓-covariant-body cb▹ Q R qr (?⁰ r ↑ s ↓ t)  k      M⇓ =
-  roll-? (cb▹ ⊛ next (Q? s t Q) ⊛ next (Q? s t R) ⊛ next (Q?-covariant-rec cb▹ Q R qr s t)
-              ⊛ next r ⊛ next k
+  roll-? (cb▹ (Q? s t Q) (Q? s t R) (Q?-covariant-rec cb▹ Q R qr s t) r k
               ⊛ unroll-? M⇓)
 
 ⇓-covariant : (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
             → (M : Term) → (k : ℕ)
             → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R
-⇓-covariant = fix ⇓-covariant-body
+⇓-covariant = fix (⇓-covariant-body ∘ cov-distr)
