@@ -1,7 +1,7 @@
 module PCF.Ext.Term where
 
 open import Prelude
---open import Data.Empty
+open import Data.Empty
 --open import Data.Unit
 --open import Data.Dec
 open import Data.Nat hiding (_·_)
@@ -92,6 +92,10 @@ data Val : 𝒰 where
   v-＃ : ℕ → Val
   v-ƛ  : Id → Term → Val
 
+data IsVal : Term → Val → 𝒰 where
+  is-＃ : ∀ {n} → IsVal (＃ n) (v-＃ n)
+  is-ƛ  : ∀ {x t} → IsVal (ƛ x ⇒ t) (v-ƛ x t)
+
 {-
 data Val : Term → 𝒰 where
   v-＃ : ∀ n
@@ -101,4 +105,24 @@ data Val : Term → 𝒰 where
   v-ƛ  : ∀ x t
         ----------
        → Val (ƛ x ⇒ t)
+-}
+{-
+-- appears free in
+
+data afi : String → Term → 𝒰 where
+  afi-`   : ∀ {x} → afi x (` x)
+  afi-·-l : ∀ {x M N} → afi x M → afi x (M · N)
+  afi-·-r : ∀ {x M N} → afi x N → afi x (M · N)
+  afi-ƛ   : ∀ {x y N} → x ≠ y → afi x N → afi x (ƛ y ⇒ N)
+  afi-Y   : ∀ {x M} → afi x M → afi x (Y M)
+  -- booleans
+  afi-?-b : ∀ {x L M N} → afi x L → afi x (?⁰ L ↑ M ↓ N)
+  afi-?-t : ∀ {x L M N} → afi x M → afi x (?⁰ L ↑ M ↓ N)
+  afi-?-f : ∀ {x L M N} → afi x N → afi x (?⁰ L ↑ M ↓ N)
+  -- numbers
+  afi-𝓈   : ∀ {x M} → afi x M → afi x (𝓈 M)
+  afi-𝓅   : ∀ {x M} → afi x M → afi x (𝓅 M)
+
+closed : Term → 𝒰
+closed t = ∀ i → ¬ afi i t
 -}

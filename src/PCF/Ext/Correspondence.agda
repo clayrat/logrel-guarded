@@ -20,23 +20,23 @@ small⁰-big : {k : ℕ} (M N : Term) (Q : Val → ℕ → 𝒰)
            → N ⇓⁅ k ⁆ Q
            → M ⇓⁅ k ⁆ Q
 small⁰-big .((ƛ x ⇒ M) · N)       .(M [ x := N ])  Q (β-ƛ {x} {M} {N})        N⇓ =
-  roll-· (next (roll-Q· {t = M} (next N⇓)))
+  ⇉· (next (⇉Q· {t = M} (next N⇓)))
 small⁰-big .(𝓅 (＃ 0))            .(＃ 0)          Q  β-𝓅⁰                    N⇓ =
-  roll-𝓅 {Q = Q} (next (0 , refl , N⇓))
+  ⇉𝓅 {Q = Q} (next (0 , refl , N⇓))
 small⁰-big .(𝓅 (＃ suc n))        .(＃ n)          Q (β-𝓅ˢ {n})               N⇓ =
-  roll-𝓅 {Q = Q} (next (suc n , refl , N⇓))
+  ⇉𝓅 {Q = Q} (next (suc n , refl , N⇓))
 small⁰-big .(?⁰ ＃ 0 ↑ M ↓ N)      M               Q (β-?⁰ {M} {N})           N⇓ =
-  roll-? (next (roll-Q?0 {t = M} (next N⇓)))
+  ⇉? (next (⇉Q?0 {t = M} (next N⇓)))
 small⁰-big .(?⁰ ＃ suc n ↑ M ↓ N)  N               Q (β-?ˢ {M} {N} {n})       N⇓ =
-  roll-? (next (roll-Q?s {s = M} {n = n} (next N⇓)))
+  ⇉? (next (⇉Q?s {s = M} {n = n} (next N⇓)))
 small⁰-big .(M · N)               .(M′ · N)        Q (ξ-· {M} {M′} {N} s)    N⇓ =
-  roll-· (▹map (small⁰-big M M′ (Q· N Q) s) (unroll-· N⇓))
+  ⇉· (▹map (small⁰-big M M′ (Q· N Q) s) (·⇉ N⇓))
 small⁰-big .(𝓈 M)                 .(𝓈 M′)          Q (ξ-𝓈 {M} {M′} s)        N⇓ =
-  roll-𝓈 {Q = Q} (▹map (small⁰-big M M′ (Q𝓈 Q) s) (unroll-𝓈 {Q = Q} N⇓))
+  ⇉𝓈 {Q = Q} (▹map (small⁰-big M M′ (Q𝓈 Q) s) (𝓈⇉ {Q = Q} N⇓))
 small⁰-big .(𝓅 M)                 .(𝓅 M′)         Q (ξ-𝓅 {M} {M′} s)         N⇓ =
-  roll-𝓅 {Q = Q} (▹map (small⁰-big M M′ (Q𝓅 Q) s) (unroll-𝓅 {Q = Q} N⇓))
+  ⇉𝓅 {Q = Q} (▹map (small⁰-big M M′ (Q𝓅 Q) s) (𝓅⇉ {Q = Q} N⇓))
 small⁰-big .(?⁰ L ↑ M ↓ N)        .(?⁰ L′ ↑ M ↓ N) Q (ξ-? {L} {L′} {M} {N} s) N⇓ =
-  roll-? (▹map (small⁰-big L L′ (Q? M N Q) s) (unroll-? N⇓))
+  ⇉? (▹map (small⁰-big L L′ (Q? M N Q) s) (?⇉ N⇓))
 
 -- 2.5.2
 small¹-big : {k : ℕ} (M N : Term) (Q : Val → ℕ → 𝒰)
@@ -44,15 +44,15 @@ small¹-big : {k : ℕ} (M N : Term) (Q : Val → ℕ → 𝒰)
            → ▹ (N ⇓⁅ k ⁆ Q)
            → M ⇓⁅ suc k ⁆ Q
 small¹-big .(Y M)          .(M · Y M)       Q (Ｙ {M})                 N⇓▹ =
-  roll-Y N⇓▹
+  ⇉Y N⇓▹
 small¹-big .(M · N)        .(M′ · N)        Q (ξ-· {M} {M′} {N} s)     N⇓▹ =
-  roll-· (▹map (small¹-big M M′ (Q· N Q) s ∘ unroll-·) N⇓▹)
+  ⇉· (▹map (small¹-big M M′ (Q· N Q) s ∘ ·⇉) N⇓▹)
 small¹-big .(𝓈 M)          .(𝓈 M′)          Q (ξ-𝓈 {M} {M′} s)         N⇓▹ =
-  roll-𝓈 {Q = Q} (▹map (small¹-big M M′ (Q𝓈 Q) s ∘ unroll-𝓈 {Q = Q}) N⇓▹)
+  ⇉𝓈 {Q = Q} (▹map (small¹-big M M′ (Q𝓈 Q) s ∘ 𝓈⇉ {Q = Q}) N⇓▹)
 small¹-big .(𝓅 M)          .(𝓅 M′)          Q (ξ-𝓅 {M} {M′} s)        N⇓▹ =
-  roll-𝓅 {Q = Q} (▹map (small¹-big M M′ (Q𝓅 Q) s ∘ unroll-𝓅 {Q = Q}) N⇓▹)
+  ⇉𝓅 {Q = Q} (▹map (small¹-big M M′ (Q𝓅 Q) s ∘ 𝓅⇉ {Q = Q}) N⇓▹)
 small¹-big .(?⁰ L ↑ M ↓ N) .(?⁰ L′ ↑ M ↓ N) Q (ξ-? {L} {L′} {M} {N} s) N⇓▹ =
-  roll-? (▹map (small¹-big L L′ (Q? M N Q) s ∘ unroll-?) N⇓▹)
+  ⇉? (▹map (small¹-big L L′ (Q? M N Q) s ∘ ?⇉) N⇓▹)
 
 -- 2.6
 
@@ -101,7 +101,7 @@ small-rtc-inter : {k : ℕ} (M N : Term) (Q : Term → ℕ → 𝒰)
                 → N ⇛⁅ k ⁆ Q
                 → M ⇛⁅ k ⁆ Q
 small-rtc-inter {k = zero}  M N Q MN (P , NP , qP)                 = ⇛ᵏ {Q = Q} (MN —↠⁰∘ NP) qP
-small-rtc-inter {k = suc k} M N Q MN (inl (P , NP , qP))           = ⇛ᵏ (MN —↠⁰∘ NP) qP
+small-rtc-inter {k = suc k} M N Q MN (inl (P , NP , qP))           = ⇛ᵏ         (MN —↠⁰∘ NP) qP
 small-rtc-inter {k = suc k} M N Q MN (inr (R , S , NR , RS , SQ▹)) = ⇛ˢ (MN —↠⁰∘ NR) RS SQ▹
 
 -- 2.9
@@ -109,8 +109,10 @@ small-rtc-inter {k = suc k} M N Q MN (inr (R , S , NR , RS , SQ▹)) = ⇛ˢ (MN
 inter-comp : {k : ℕ} (M : Term) (Q : Term → ℕ → 𝒰)
            → M ⇛⁅ k ⁆ (λ L n → L ⇛⁅ n ⁆ Q)
            → M ⇛⁅ k ⁆ Q
-inter-comp {k = zero}  M Q (N , MN , qN)                 = small-rtc-inter M N Q MN qN
-inter-comp {k = suc k} M Q (inl (N , MN , qN))           = small-rtc-inter M N Q MN qN
+inter-comp {k = zero}  M Q (N , MN , qN)                 =
+  small-rtc-inter M N Q MN qN
+inter-comp {k = suc k} M Q (inl (N , MN , qN))           =
+  small-rtc-inter M N Q MN qN
 inter-comp {k = suc k} M Q (inr (N , P , NP , PS , SQ▹)) =
   ⇛ˢ NP PS (▹map (inter-comp {k} P Q) SQ▹)
 
@@ -125,7 +127,7 @@ inter-· : {k : ℕ} (M N : Term) (Q : Term → ℕ → 𝒰)
 inter-· {k = zero}  M N Q (P , MP , qP)                 =
   ⇛ᵏ {Q = Qᴱ (_· N) Q} (—↠⁰-· MP) (P , refl , qP)
 inter-· {k = suc k} M N Q (inl (P , MP , qP))           =
-  ⇛ᵏ (—↠⁰-· MP) (P , refl , qP)
+  ⇛ᵏ                   (—↠⁰-· MP) (P , refl , qP)
 inter-· {k = suc k} M N Q (inr (R , S , MR , RS , SQ▹)) =
   ⇛ˢ (—↠⁰-· MR) (ξ-· RS) (▹map (inter-· {k} S N Q) SQ▹)
 
@@ -135,7 +137,7 @@ inter-𝓈 : {k : ℕ} (M : Term) (Q : Term → ℕ → 𝒰)
 inter-𝓈 {k = zero}  M Q (N , MN , qN)                 =
   ⇛ᵏ {Q = Qᴱ 𝓈 Q} (—↠⁰-𝓈 MN) (N , refl , qN)
 inter-𝓈 {k = suc k} M Q (inl (N , MN , qN))           =
-  ⇛ᵏ (—↠⁰-𝓈 MN) (N , refl , qN)
+  ⇛ᵏ             (—↠⁰-𝓈 MN) (N , refl , qN)
 inter-𝓈 {k = suc k} M Q (inr (N , P , MN , NP , SQ▹)) =
   ⇛ˢ (—↠⁰-𝓈 MN) (ξ-𝓈 NP) (▹map (inter-𝓈 {k} P Q) SQ▹)
 
@@ -145,7 +147,7 @@ inter-𝓅 : {k : ℕ} (M : Term) (Q : Term → ℕ → 𝒰)
 inter-𝓅 {k = zero}  M Q (N , MN , qN)                 =
   ⇛ᵏ {Q = Qᴱ 𝓅 Q} (—↠⁰-𝓅 MN) (N , refl , qN)
 inter-𝓅 {k = suc k} M Q (inl (N , MN , qN))           =
-  ⇛ᵏ {Q = Qᴱ 𝓅 Q} (—↠⁰-𝓅 MN) (N , refl , qN)
+  ⇛ᵏ              (—↠⁰-𝓅 MN) (N , refl , qN)
 inter-𝓅 {k = suc k} M Q (inr (N , P , MN , NP , SQ▹)) =
   ⇛ˢ (—↠⁰-𝓅 MN) (ξ-𝓅 NP) (▹map (inter-𝓅 {k} P Q) SQ▹)
 
@@ -155,19 +157,21 @@ inter-? : {k : ℕ} (L M N : Term) (Q : Term → ℕ → 𝒰)
 inter-? {k = zero}  L M N Q (P , LP , qP)                 =
   ⇛ᵏ {Q = Qᴱ (λ q → ?⁰ q ↑ M ↓ N) Q} (—↠⁰-? LP) (P , refl , qP)
 inter-? {k = suc k} L M N Q (inl (P , LP , qP))           =
-  ⇛ᵏ (—↠⁰-? LP) (P , refl , qP)
+  ⇛ᵏ                                 (—↠⁰-? LP) (P , refl , qP)
 inter-? {k = suc k} L M N Q (inr (R , S , LR , RS , SQ▹)) =
   ⇛ˢ (—↠⁰-? LR) (ξ-? RS) (▹map (inter-? {k} S M N Q) SQ▹)
 
 -- 2.11
 
-inter-big : {k : ℕ} (M : Term) (Q : Val → ℕ → 𝒰)
+inter-big-comp : {k : ℕ} (M : Term) (Q : Val → ℕ → 𝒰)
           → M ⇛⁅ k ⁆ (λ N z → N ⇓⁅ z ⁆ Q)
           → M ⇓⁅ k ⁆ Q
-inter-big {k = zero}  M Q (P , LP , qP)                 = small-rtc-big M P Q LP qP
-inter-big {k = suc k} M Q (inl (P , LP , qP))           = small-rtc-big M P Q LP qP
-inter-big {k = suc k} M Q (inr (R , S , LR , RS , SQ▹)) =
-  small-rtc-big M R Q LR (small¹-big R S Q RS (▹map (inter-big S Q) SQ▹))
+inter-big-comp {k = zero}  M Q (P , LP , qP)                 =
+  small-rtc-big M P Q LP qP
+inter-big-comp {k = suc k} M Q (inl (P , LP , qP))           =
+  small-rtc-big M P Q LP qP
+inter-big-comp {k = suc k} M Q (inr (R , S , LR , RS , SQ▹)) =
+  small-rtc-big M R Q LR (small¹-big R S Q RS (▹map (inter-big-comp S Q) SQ▹))
 
 -- 2.12
 
@@ -197,8 +201,9 @@ Q·-covariant-rec : (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R
                  → (s : Term) → (v : Val) → (n : ℕ)
                  → Q· s Q v n → Q· s R v n
 Q·-covariant-rec cb▹ Q R qr s (v-ƛ x t) n qq =
-  roll-Q· {t} {x} {s}
-          (cb▹ Q R qr (t [ x := s ]) n ⊛ unroll-Q· {t} {x} {s} qq)
+  ⇉Q· {t} {x} {s}
+      (cb▹ Q R qr (t [ x := s ]) n
+         ⊛ Q·⇉ {t} {x} {s} qq)
 
 Q?-covariant-rec : (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
                     → (M : Term) → (k : ℕ)
@@ -207,11 +212,13 @@ Q?-covariant-rec : (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R 
                  → (s t : Term) → (v : Val) → (n : ℕ)
                  → Q? s t Q v n → Q? s t R v n
 Q?-covariant-rec cb▹ Q R qr s t (v-＃ zero)    n qq =
-  roll-Q?0 {s} {t}
-           (cb▹ Q R qr s n ⊛ unroll-Q?0 {s} {t} qq)
+  ⇉Q?0 {s} {t}
+       (cb▹ Q R qr s n
+          ⊛ Q?0⇉ {s} {t} qq)
 Q?-covariant-rec cb▹ Q R qr s t (v-＃ (suc m)) n qq =
-  roll-Q?s {s} {t} {m = n} {n = m}
-           (cb▹ Q R qr t n ⊛ unroll-Q?s {s} {t} {m = n} {n = m} qq)
+  ⇉Q?s {s} {t} {m = n} {n = m}
+       (cb▹ Q R qr t n
+          ⊛ Q?s⇉ {s} {t} {m = n} {n = m} qq)
 
 ⇓-covariant-body : (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
                     → (M : Term) → (k : ℕ)
@@ -222,23 +229,36 @@ Q?-covariant-rec cb▹ Q R qr s t (v-＃ (suc m)) n qq =
 ⇓-covariant-body cb▹ Q R qr (ƛ x ⇒ t)       k      M⇓ =
   qr (v-ƛ x t) k M⇓
 ⇓-covariant-body cb▹ Q R qr (r · s)         k      M⇓ =
-  roll-· (cb▹ (Q· s Q) (Q· s R) (Q·-covariant-rec cb▹ Q R qr s) r k
-              ⊛ unroll-· M⇓)
+  ⇉· (cb▹ (Q· s Q) (Q· s R) (Q·-covariant-rec cb▹ Q R qr s) r k
+        ⊛ ·⇉ M⇓)
 ⇓-covariant-body cb▹ Q R qr (Y t)          (suc k) M⇓ =
-  roll-Y (cb▹ Q R qr (t · Y t) k ⊛ unroll-Y M⇓)
+  ⇉Y (cb▹ Q R qr (t · Y t) k
+        ⊛ Y⇉ M⇓)
 ⇓-covariant-body cb▹ Q R qr (＃ n)           k     M⇓ =
   qr (v-＃ n) k M⇓
 ⇓-covariant-body cb▹ Q R qr (𝓈 t)           k      M⇓ =
-  roll-𝓈 {Q = R} (cb▹ (Q𝓈 Q) (Q𝓈 R) (Q𝓈-covariant Q R qr) t k
-                      ⊛ unroll-𝓈 {Q = Q} M⇓)
+  ⇉𝓈 {Q = R} (cb▹ (Q𝓈 Q) (Q𝓈 R) (Q𝓈-covariant Q R qr) t k
+                ⊛ 𝓈⇉ {Q = Q} M⇓)
 ⇓-covariant-body cb▹ Q R qr (𝓅 t)           k      M⇓ =
-  roll-𝓅 {Q = R} (cb▹ (Q𝓅 Q) (Q𝓅 R) (Q𝓅-covariant Q R qr) t k
-                      ⊛ unroll-𝓅 {Q = Q} M⇓)
+  ⇉𝓅 {Q = R} (cb▹ (Q𝓅 Q) (Q𝓅 R) (Q𝓅-covariant Q R qr) t k
+                ⊛ 𝓅⇉ {Q = Q} M⇓)
 ⇓-covariant-body cb▹ Q R qr (?⁰ r ↑ s ↓ t)  k      M⇓ =
-  roll-? (cb▹ (Q? s t Q) (Q? s t R) (Q?-covariant-rec cb▹ Q R qr s t) r k
-              ⊛ unroll-? M⇓)
+  ⇉? (cb▹ (Q? s t Q) (Q? s t R) (Q?-covariant-rec cb▹ Q R qr s t) r k
+        ⊛ ?⇉ M⇓)
 
 ⇓-covariant : (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
             → (M : Term) → (k : ℕ)
             → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R
 ⇓-covariant = fix (⇓-covariant-body ∘ cov-distr)
+
+-- 2.13.1
+
+Qᵀ : (Val → ℕ → 𝒰)
+   → Term → ℕ → 𝒰
+Qᵀ Q N k = Σ[ v ꞉ Val ] IsVal N v × Q v k
+
+Qᵀ-impl : (Q : Val → ℕ → 𝒰)
+        → (N : Term) → (k : ℕ)
+        → Qᵀ Q N k → N ⇓⁅ k ⁆ Q
+Qᵀ-impl Q (ƛ x ⇒ t) k (.(v-ƛ x t) , is-ƛ , q) = q
+Qᵀ-impl Q (＃ n)    k (.(v-＃ n)  , is-＃ , q) = q

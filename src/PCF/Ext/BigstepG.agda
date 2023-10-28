@@ -12,24 +12,30 @@ open import PCF.Ext.Subst
 
 -- Step-indexed Big-Step Operational (guarded form)
 
-Q·-rec : (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰) → Term → (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
+Q·-rec : (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰)
+       → Term → (Val → ℕ → 𝒰)
+       → Val → ℕ → 𝒰
 Q·-rec ⇓▹ s Q (v-ƛ x t) m = ▸ ⇓▹ (t [ x := s ]) m Q
 Q·-rec ⇓▹ _ _ (v-＃ _)  _ = ⊥
 
-Q𝓈 : (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
+Q𝓈 : (Val → ℕ → 𝒰)
+   → Val → ℕ → 𝒰
 Q𝓈 Q v l = Σ[ n ꞉ ℕ ] (v ＝ v-＃ n) × Q (v-＃ (suc n)) l
 
 -- thesis 2.3.1 says this should guard against n=0 but then it's inconsistent with small-step
-Q𝓅 : (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
+Q𝓅 : (Val → ℕ → 𝒰)
+   → Val → ℕ → 𝒰
 Q𝓅 Q v l = Σ[ n ꞉ ℕ ] (v ＝ v-＃ n) × Q (v-＃ (pred n)) l
 
-Q?-rec : (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰) → Term → Term → (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
+Q?-rec : (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰)
+       → Term → Term → (Val → ℕ → 𝒰)
+       → Val → ℕ → 𝒰
 Q?-rec ⇓▹ s _ Q (v-＃  zero)   m = ▸ ⇓▹ s m Q
 Q?-rec ⇓▹ _ t Q (v-＃ (suc _)) m = ▸ ⇓▹ t m Q
 Q?-rec ⇓▹ _ _ _ (v-ƛ _ _)      _ = ⊥
 
-⇓⁅⁆-case :   (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰)
-           → Term → ℕ → (Val → ℕ → 𝒰) → 𝒰
+⇓⁅⁆-case : (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰)
+        → Term → ℕ → (Val → ℕ → 𝒰) → 𝒰
 ⇓⁅⁆-case ⇓▹ (` _)           _      _ = ⊥
 ⇓⁅⁆-case ⇓▹ (ƛ x ⇒ t)       k      Q = Q (v-ƛ x t) k
 ⇓⁅⁆-case ⇓▹ (r · s)         k      Q = ▸ ⇓▹ r k (Q·-rec ⇓▹ s Q)
@@ -48,14 +54,16 @@ Q?-rec ⇓▹ _ _ _ (v-ƛ _ _)      _ = ⊥
            → Term → ℕ → (Val → ℕ → 𝒰) → 𝒰
 ⇓⁅⁆-body = ⇓⁅⁆-case ∘ ⇓⁅⁆-distr
 
-_⇓⁅_⁆_ : Term → ℕ → (Val → ℕ → 𝒰) → 𝒰
-_⇓⁅_⁆_ = fix ⇓⁅⁆-body
-
-Q· : Term → (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
+Q· : Term → (Val → ℕ → 𝒰)
+   → Val → ℕ → 𝒰
 Q· = Q·-rec $ ⇓⁅⁆-distr $ dfix ⇓⁅⁆-body
 
-Q? : Term → Term → (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
+Q? : Term → Term → (Val → ℕ → 𝒰)
+   → Val → ℕ → 𝒰
 Q? = Q?-rec $ ⇓⁅⁆-distr $ dfix ⇓⁅⁆-body
+
+_⇓⁅_⁆_ : Term → ℕ → (Val → ℕ → 𝒰) → 𝒰
+_⇓⁅_⁆_ = fix ⇓⁅⁆-body
 
 -- syntax sugar
 
@@ -68,77 +76,84 @@ s ⇓⁅ k ⁆ᵛ v = s ⇓⁅ k ⁆⁰ (_＝ v)
 _⇓^_ : Term → Val → 𝒰
 s ⇓^ v = Σ[ k ꞉ ℕ ] s ⇓⁅ k ⁆ᵛ v
 
--- un/roll
+-- equations
 
 Q·-eq : ∀ {t x s m Q} → Q· s Q (v-ƛ x t) m ＝ ▹ ((t [ x := s ]) ⇓⁅ m ⁆ Q)
 Q·-eq {t} {x} {s} {m} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α (t [ x := s ]) m Q
 
-roll-Q· : ∀ {t x s m Q} → ▹ ((t [ x := s ]) ⇓⁅ m ⁆ Q) → Q· s Q (v-ƛ x t) m
-roll-Q· {t} = transport (sym $ Q·-eq {t})
-
-unroll-Q· : ∀ {t x s m Q} → Q· s Q (v-ƛ x t) m → ▹ ((t [ x := s ]) ⇓⁅ m ⁆ Q)
-unroll-Q· {t} = transport (Q·-eq {t})
-
 Q?0-eq : ∀ {s t m Q} → Q? s t Q (v-＃ 0) m ＝ ▹ (s ⇓⁅ m ⁆ Q)
 Q?0-eq {s} {m} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α s m Q
 
-roll-Q?0 : ∀ {s t m Q} → ▹ (s ⇓⁅ m ⁆ Q) → Q? s t Q (v-＃ 0) m
-roll-Q?0 {s} {t} sm = transport (sym $ Q?0-eq {s} {t}) sm
+Q?s-eq : ∀ {s t m n Q} → Q? s t Q (v-＃ (suc n)) m ＝ ▹ (t ⇓⁅ m ⁆ Q)
+Q?s-eq {t} {m} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t m Q
 
-unroll-Q?0 : ∀ {s t m Q} → Q? s t Q (v-＃ 0) m → ▹ (s ⇓⁅ m ⁆ Q)
-unroll-Q?0 {s} {t} sm = transport (Q?0-eq {s} {t}) sm
+·-eq : ∀ {r s k Q} → (r · s) ⇓⁅ k ⁆ Q ＝ ▹ (r ⇓⁅ k ⁆ (Q· s Q))
+·-eq {r} {s} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α r k (Q· s Q)
 
--- TODO factor out rest of eqs
+Y-eq : ∀ {t k Q} → (Y t) ⇓⁅ suc k ⁆ Q ＝ ▹ ((t · Y t) ⇓⁅ k ⁆ Q)
+Y-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α (t · Y t) k Q
 
-roll-Q?s : ∀ {s t m Q n} → ▹ (t ⇓⁅ m ⁆ Q) → Q? s t Q (v-＃ (suc n)) m
-roll-Q?s {t} {m} {Q} tm =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body (~ i) α t m Q) tm
+𝓈-eq : ∀ {t k Q} → 𝓈 t ⇓⁅ k ⁆ Q ＝ ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q))
+𝓈-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓈 Q)
 
-unroll-Q?s : ∀ {s t m Q n} → Q? s t Q (v-＃ (suc n)) m → ▹ (t ⇓⁅ m ⁆ Q)
-unroll-Q?s {t} {m} {Q} tm =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body i α t m Q) tm
+𝓅-eq : ∀ {t k Q} → 𝓅 t ⇓⁅ k ⁆ Q ＝ ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q))
+𝓅-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓅 Q)
 
-roll-· : ∀ {r s k Q} → ▹ (r ⇓⁅ k ⁆ (Q· s Q)) → (r · s) ⇓⁅ k ⁆ Q
-roll-· {r} {s} {k} {Q} tr =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body (~ i) α r k (Q· s Q)) tr
+?-eq : ∀ {r s t k Q}
+     → (?⁰ r ↑ s ↓ t) ⇓⁅ k ⁆ Q ＝ ▹ (r ⇓⁅ k ⁆ (Q? s t Q))
+?-eq {r} {s} {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α r k (Q? s t Q)
 
-unroll-· : ∀ {r s k Q} → (r · s) ⇓⁅ k ⁆ Q → ▹ (r ⇓⁅ k ⁆ (Q· s Q))
-unroll-· {r} {s} {k} {Q} tr =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body i α r k (Q· s Q)) tr
+-- un/rollings
 
-roll-Y : ∀ {t k Q} → ▹ ((t · Y t) ⇓⁅ k ⁆ Q) → (Y t) ⇓⁅ suc k ⁆ Q
-roll-Y {t} {k} {Q} tYt =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body (~ i) α (t · Y t) k Q) tYt
+⇉Q· : ∀ {t x s m Q} → ▹ ((t [ x := s ]) ⇓⁅ m ⁆ Q) → Q· s Q (v-ƛ x t) m
+⇉Q· {t} = transport (sym $ Q·-eq {t})
 
-unroll-Y : ∀ {t k Q} → (Y t) ⇓⁅ suc k ⁆ Q → ▹ ((t · Y t) ⇓⁅ k ⁆ Q)
-unroll-Y {t} {k} {Q} Yt =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body i α (t · Y t) k Q) Yt
+Q·⇉ : ∀ {t x s m Q} → Q· s Q (v-ƛ x t) m → ▹ ((t [ x := s ]) ⇓⁅ m ⁆ Q)
+Q·⇉ {t} = transport (Q·-eq {t})
 
-roll-𝓈 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q)) → 𝓈 t ⇓⁅ k ⁆ Q
-roll-𝓈 {t} {k} {Q} tk =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body (~ i) α t k (Q𝓈 Q)) tk
+⇉Q?0 : ∀ {s t m Q} → ▹ (s ⇓⁅ m ⁆ Q) → Q? s t Q (v-＃ 0) m
+⇉Q?0 {s} {t} = transport (sym $ Q?0-eq {s} {t})
 
-unroll-𝓈 : ∀ {t k Q} → 𝓈 t ⇓⁅ k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q))
-unroll-𝓈 {t} {k} {Q} tk =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓈 Q)) tk
+Q?0⇉ : ∀ {s t m Q} → Q? s t Q (v-＃ 0) m → ▹ (s ⇓⁅ m ⁆ Q)
+Q?0⇉ {s} {t} = transport (Q?0-eq {s} {t})
 
-roll-𝓅 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q)) → 𝓅 t ⇓⁅ k ⁆ Q
-roll-𝓅 {t} {k} {Q} tk =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body (~ i) α t k (Q𝓅 Q)) tk
+⇉Q?s : ∀ {s t m n Q} → ▹ (t ⇓⁅ m ⁆ Q) → Q? s t Q (v-＃ (suc n)) m
+⇉Q?s {s} {t} {m} {n} = transport (sym $ Q?s-eq {s} {t} {m} {n})
 
-unroll-𝓅 : ∀ {t k Q} → 𝓅 t ⇓⁅ k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q))
-unroll-𝓅 {t} {k} {Q} tk =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓅 Q)) tk
+Q?s⇉ : ∀ {s t m n Q} → Q? s t Q (v-＃ (suc n)) m → ▹ (t ⇓⁅ m ⁆ Q)
+Q?s⇉ {s} {t} {m} {n} = transport (Q?s-eq {s} {t} {m} {n})
 
-roll-? : ∀ {r s t k Q}
-         → ▹ (r ⇓⁅ k ⁆ (Q? s t Q))
+⇉· : ∀ {r s k Q} → ▹ (r ⇓⁅ k ⁆ (Q· s Q)) → (r · s) ⇓⁅ k ⁆ Q
+⇉· = transport (sym ·-eq)
+
+·⇉ : ∀ {r s k Q} → (r · s) ⇓⁅ k ⁆ Q → ▹ (r ⇓⁅ k ⁆ (Q· s Q))
+·⇉ = transport ·-eq
+
+⇉Y : ∀ {t k Q} → ▹ ((t · Y t) ⇓⁅ k ⁆ Q) → (Y t) ⇓⁅ suc k ⁆ Q
+⇉Y = transport (sym Y-eq)
+
+Y⇉ : ∀ {t k Q} → (Y t) ⇓⁅ suc k ⁆ Q → ▹ ((t · Y t) ⇓⁅ k ⁆ Q)
+Y⇉ = transport Y-eq
+
+⇉𝓈 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q)) → 𝓈 t ⇓⁅ k ⁆ Q
+⇉𝓈 {Q} = transport (sym $ 𝓈-eq {Q = Q})
+
+𝓈⇉ : ∀ {t k Q} → 𝓈 t ⇓⁅ k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q))
+𝓈⇉ {Q} = transport (𝓈-eq {Q = Q})
+
+⇉𝓅 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q)) → 𝓅 t ⇓⁅ k ⁆ Q
+⇉𝓅 {Q} = transport (sym $ 𝓅-eq {Q = Q})
+
+𝓅⇉ : ∀ {t k Q} → 𝓅 t ⇓⁅ k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q))
+𝓅⇉ {Q} = transport (𝓅-eq {Q = Q})
+
+⇉? : ∀ {r s t k Q}
+       → ▹ (r ⇓⁅ k ⁆ (Q? s t Q))
+       → (?⁰ r ↑ s ↓ t) ⇓⁅ k ⁆ Q
+⇉? = transport (sym ?-eq)
+
+?⇉ : ∀ {r s t k Q}
          → (?⁰ r ↑ s ↓ t) ⇓⁅ k ⁆ Q
-roll-? {r} {s} {t} {k} {Q} rst =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body (~ i) α r k (Q? s t Q)) rst
-
-unroll-? : ∀ {r s t k Q}
-         → (?⁰ r ↑ s ↓ t) ⇓⁅ k ⁆ Q
          → ▹ (r ⇓⁅ k ⁆ (Q? s t Q))
-unroll-? {r} {s} {t} {k} {Q} rst =
-  transport (λ i → ▹[ α ] pfix ⇓⁅⁆-body i α r k (Q? s t Q)) rst
+?⇉ = transport ?-eq
 
