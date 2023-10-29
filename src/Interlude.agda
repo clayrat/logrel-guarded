@@ -32,12 +32,16 @@ extract d = Data.Maybe.rec d id
 
 lup : String → List (String × A) → Maybe A
 lup k []            = nothing
-lup k ((j , x) ∷ l) = if ⌊ k ≟ j ⌋ then just x else lup k l
+lup k ((j , x) ∷ l) with k ≟ j
+... | yes _ = just x
+... | no _ = lup k l
 
 -- TODO formulate with filter
 drp : String → List (String × A) → List (String × A)
 drp n []              = []
-drp n ((m , x) ∷ nxs) = if ⌊ n ≟ m ⌋ then drp n nxs else (m , x) ∷ drp n nxs
+drp n ((m , x) ∷ nxs) with n ≟ m
+... | yes _ = drp n nxs
+... | no  _ = ((m , x)) ∷ drp n nxs
 
 -- bi-implication
 
