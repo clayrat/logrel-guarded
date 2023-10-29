@@ -36,7 +36,7 @@ subst-msubst : ∀ {env v}
              → ∀ x t
              → msubst env (t [ x := v ]) ＝ (msubst (drp x env) t) [ x := v ]
 subst-msubst {env = []}        {v} cv []        x t = refl
-subst-msubst {((y , p) ∷ env)} {v} cv (cp ∷ ce) x t with x ≟ y
+subst-msubst {((y , p) ∷ env)} {v} cv (cp ∷ ce) x t with x ≟ y in q
 ... | yes prf = ap (msubst env) (ap (λ q → t [ x := v ] [ q := p ]) (sym prf)
                                  ∙ duplicate-subst t x v p cv)
               ∙ subst-msubst cv ce x t
@@ -81,10 +81,9 @@ mupdate ((x , v) ∷ xts) Γ = (mupdate xts Γ) , x ⦂ v
 mupdate-lookup : ∀ {c x T}
                → mupdate c ∅ ∋ x ⦂ T
                → lup x c ＝ just T
-mupdate-lookup {((y , S) ∷ c)} {.y} {.S}  here         with y ≟ y  -- wtf
+mupdate-lookup {((y , S) ∷ c)} {.y} {.S}  here with y ≟ y  -- wtf
 ... | yes _   = refl
 ... | no ctra = absurd (ctra refl)
 mupdate-lookup {((y , S) ∷ c)} {x}  {T}  (there x≠y l) with x ≟ y
 ... | yes prf = absurd (x≠y prf)
 ... | no _    = mupdate-lookup l
-
