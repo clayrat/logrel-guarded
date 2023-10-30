@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module PCF.Ext.Bigstep2 where
+module PCF.Ext.Bigstep where
 
 open import Prelude
 open import Data.Empty

@@ -11,7 +11,7 @@ open import Later
 open import Interlude
 open import PCF.Ext.Term
 open import PCF.Ext.Subst
-open import PCF.Ext.Bigstep2
+open import PCF.Ext.Bigstep
 open import PCF.Ext.Smallstep
 
 -- 2.5.1
@@ -434,9 +434,8 @@ big→inter {k}     (?⁰ r ↑ s ↓ t) Q M⇓ =
   Q?₂-impl (v-＃ (suc _)) n qq = big→inter t Q qq
 
   Q₃ : Val → ℕ → 𝒰
-  Q₃ (v-＃  zero  ) m = (?⁰ (＃ 0      ) ↑ s ↓ t) ⇛⁅ m ⁆ Qᵀ Q
-  Q₃ (v-＃ (suc n)) m = (?⁰ (＃ (suc n)) ↑ s ↓ t) ⇛⁅ m ⁆ Qᵀ Q
-  Q₃ (v-ƛ _ _     ) m = ⊥
+  Q₃ (v-＃ n ) m = (?⁰ (＃ n) ↑ s ↓ t) ⇛⁅ m ⁆ Qᵀ Q
+  Q₃ (v-ƛ _ _) m = ⊥
 
   Q₂₃-impl : ∀ v n → Q₂ v n → Q₃ v n
   Q₂₃-impl (v-＃  zero  ) n qq = small-rtc-inter (?⁰ ＃ 0     ↑ s ↓ t) s (Qᵀ Q) (^—↠⁰ β-?⁰) qq
@@ -460,8 +459,7 @@ big→inter {k}     (?⁰ r ↑ s ↓ t) Q M⇓ =
   Q₄ (?⁰ ?⁰ t ↑ t₃ ↓ t₄ ↑ t₁ ↓ t₂) m = ⊥
 
   Q₃₄ : ∀ p n → Qᴱ (λ q → ?⁰ q ↑ s ↓ t) (Qᵀ Q₃) p n → Q₄ p n
-  Q₃₄ p n (.(＃ zero) , e , .(v-＃ zero) , is-＃ {n = zero} , qq) = subst (λ q → Q₄ q n) (sym e) qq
-  Q₃₄ p n (.(＃ suc m) , e , .(v-＃ (suc m)) , is-＃ {n = suc m} , qq) = subst (λ q → Q₄ q n) (sym e) qq
+  Q₃₄ p n (.(＃ m) , e , .(v-＃ m) , is-＃ {n = m} , qq) = subst (λ q → Q₄ q n) (sym e) qq
 
   Q₄i : ∀ v n → Q₄ v n → v ⇛⁅ n ⁆ Qᵀ Q
   Q₄i (?⁰ ＃ p ↑ t₁ ↓ t₂) n qq = qq
