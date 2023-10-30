@@ -15,6 +15,7 @@ open import PCF.Ext.Bigstep
 open import PCF.Ext.Smallstep
 
 -- 2.5.1
+
 small⁰-big : {k : ℕ} (M N : Term) (Q : Val → ℕ → 𝒰)
            → M —→⁅ s⁰ ⁆ N
            → N ⇓⁅ k ⁆ Q
@@ -41,6 +42,7 @@ small⁰-big .(?⁰ L ↑ M ↓ N)        .(?⁰ L′ ↑ M ↓ N) Q (ξ-? {L} {
   small⁰-big L L′ (Q? M N Q) s N⇓
 
 -- 2.5.2
+
 small¹-big : {k : ℕ} (M N : Term) (Q : Val → ℕ → 𝒰)
            → M —→⁅ s¹ ⁆ N
            → ▹ (N ⇓⁅ k ⁆ Q)
@@ -187,17 +189,6 @@ Q𝓅-covariant : (Q R : Val → ℕ → 𝒰)
              → ∀ v n → Q𝓅 Q v n → Q𝓅 R v n
 Q𝓅-covariant Q R qr v n (x , e , qx) = x , e , qr (v-＃ (pred x)) n qx
 
-{-
-cov-distr : ▹ (  (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
-                      → (M : Term) → (k : ℕ)
-                      → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R)
-          → (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
-          → (M : Term) → (k : ℕ)
-          → ▹ (M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R)
-cov-distr cb▹ Q R qr M k = cb▹ ⊛ next Q ⊛ next R ⊛ next qr
-                               ⊛ next M ⊛ next k
--}
-
 -- substitution is problematic
 {-# TERMINATING #-}
 mutual
@@ -245,6 +236,10 @@ mutual
 Qᵀ : (Val → ℕ → 𝒰)
    → Term → ℕ → 𝒰
 Qᵀ Q N k = Σ[ v ꞉ Val ] IsVal N v × Q v k
+
+Qᵀ⁰ : (Val → 𝒰)
+   → Term → 𝒰
+Qᵀ⁰ Q N = Σ[ v ꞉ Val ] IsVal N v × Q v
 
 Qᵀ-impl : (Q : Val → ℕ → 𝒰)
         → (N : Term) → (k : ℕ)
@@ -463,3 +458,65 @@ big→inter {k}     (?⁰ r ↑ s ↓ t) Q M⇓ =
 
   Q₄i : ∀ v n → Q₄ v n → v ⇛⁅ n ⁆ Qᵀ Q
   Q₄i (?⁰ ＃ p ↑ t₁ ↓ t₂) n qq = qq
+
+-- 2.13.2
+
+inter→big : {k : ℕ} (M : Term) (Q : Val → ℕ → 𝒰)
+          → M ⇛⁅ k ⁆ (Qᵀ Q)
+          → M ⇓⁅ k ⁆ Q
+inter→big {k} M Q M⇛ =
+  inter-big-comp M Q $
+  ⇛-covariant (Qᵀ Q) (λ N z → N ⇓⁅ z ⁆ Q) go M k M⇛
+  where
+  go : ∀ v n → Qᵀ Q v n → v ⇓⁅ n ⁆ Q
+  go .(＃ _)    n (.(v-＃ _  ) , is-＃ , q) = q
+  go .(ƛ _ ⇒ _) n (.(v-ƛ _ _) , is-ƛ , q) = q
+
+-- 2.14.1
+
+Q⁰ : (Term → 𝒰) → Term → ℕ → 𝒰
+Q⁰ Q N k = (k ＝ 0) × Q N
+
+inter→small-rtc : {k : ℕ} (M : Term) (Q : Term → 𝒰)
+                → M ⇛⁅ k ⁆ Q⁰ Q
+                → M =⇒⁅ k ⁆ Q
+inter→small-rtc {k = zero}  M Q (N , MN , _ , QN)             =
+  N , MN , QN
+inter→small-rtc {k = suc k} M Q (inl (N , MN , e , _))        =
+  absurd (suc≠zero e)
+inter→small-rtc {k = suc k} M Q (inr (N , R , MN , NR , QR▹)) =
+  N , R , MN , NR , ▹map (inter→small-rtc R Q) QR▹
+
+-- 2.14.2
+
+small-rtc→inter : {k : ℕ} (M : Term) (Q : Term → 𝒰)
+                → M =⇒⁅ k ⁆ Q
+                → M ⇛⁅ k ⁆ Q⁰ Q
+small-rtc→inter {k = zero } M Q (N , MN , QN)           = ⇛ᵏ {Q = Q⁰ Q} MN (refl , QN)
+small-rtc→inter {k = suc k} M Q (N , R , MN , NR , QR▹) = ⇛ˢ MN NR (▹map (small-rtc→inter R Q) QR▹)
+
+-- 2.3.1
+
+big→small-rtc : {k : ℕ} (M : Term) (Q : Val → 𝒰)
+              → M ⇓⁅ k ⁆⁰ Q
+              → M =⇒⁅ k ⁆ (Qᵀ⁰ Q)
+big→small-rtc {k} M Q M⇓ =
+  inter→small-rtc M (Qᵀ⁰ Q) $
+  ⇛-covariant (Qᵀ (λ v l → (l ＝ 0) × Q v)) (Q⁰ (Qᵀ⁰ Q)) go M k $
+  big→inter M (λ v l → (l ＝ 0) × (Q v)) M⇓
+  where
+  go : ∀ v n → Qᵀ (λ w l → (l ＝ 0) × Q w) v n → Q⁰ (Qᵀ⁰ Q) v n
+  go v n (w , iw , n0 , qw) = n0 , w , iw , qw
+
+-- 2.3.2
+
+small-rtc→big : {k : ℕ} (M : Term) (Q : Val → 𝒰)
+              → M =⇒⁅ k ⁆ (Qᵀ⁰ Q)
+              → M ⇓⁅ k ⁆⁰ Q
+small-rtc→big {k} M Q M⇒ =
+  inter→big M (λ v l → (l ＝ 0) × Q v) $
+  ⇛-covariant (Q⁰ (Qᵀ⁰ Q)) (Qᵀ (λ v l → (l ＝ 0) × Q v)) go M k $
+  small-rtc→inter M (Qᵀ⁰ Q) M⇒
+  where
+  go : ∀ v n → Q⁰ (Qᵀ⁰ Q) v n → Qᵀ (λ w l → (l ＝ 0) × Q w) v n
+  go v n (n0 , w , iw , qw) = w , iw , n0 , qw
