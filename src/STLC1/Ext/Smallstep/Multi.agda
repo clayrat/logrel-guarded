@@ -36,7 +36,7 @@ subst-msubst : ∀ {env v}
              → ∀ x t
              → msubst env (t [ x := v ]) ＝ (msubst (drp x env) t) [ x := v ]
 subst-msubst {env = []}        {v} cv []        x t = refl
-subst-msubst {((y , p) ∷ env)} {v} cv (cp ∷ ce) x t with x ≟ y in q
+subst-msubst {((y , p) ∷ env)} {v} cv (cp ∷ ce) x t with x ≟ y
 ... | yes prf = ap (msubst env) (ap (λ q → t [ x := v ] [ q := p ]) (sym prf)
                                  ∙ duplicate-subst t x v p cv)
               ∙ subst-msubst cv ce x t
