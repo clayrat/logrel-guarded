@@ -67,5 +67,5 @@ fix f = f (dfix f)
 fix-path : (f : ▹ A → A) → fix f ＝ f (next (fix f))
 fix-path f i = f (pfix f i)
 
-
-
+▹Alg : 𝒰 ℓ → 𝒰 ℓ
+▹Alg A = ▹ A → A

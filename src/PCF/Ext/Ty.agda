@@ -132,17 +132,25 @@ data _⊢_⦂_ : Ctx → Term → Ty → 𝒰 where
       -------------------
     → Γ ⊢ ?⁰ L ↑ M ↓ N ⦂ A
 
-{-
 -- weakening / renaming
 
 weaken : ∀ {Γ₁ Γ₂ t T} → Γ₁ ⊆ Γ₂ → Γ₁ ⊢ t ⦂ T → Γ₂ ⊢ t ⦂ T
-weaken {t = .𝓉𝓉}   {T}                 sub  ⊢𝓉𝓉                    = ⊢𝓉𝓉
-weaken {t = .(` x)}   {T}              sub (⊢` {x} p)              =
+weaken {t = .(` x)}   {T}              sub (⊢` {x} p)                  =
   ⊢` (sub T x p)
-weaken {t = .(ƛ x ⇒ N)} {T = .(A ⇒ B)} sub (⊢ƛ {x} {N} {A} {B} ⊢N) =
+weaken {t = .(ƛ x ⇒ N)} {T = .(A ⇒ B)} sub (⊢ƛ {x} {N} {A} {B} ⊢N)     =
   ⊢ƛ (weaken (⊆-ext sub) ⊢N)
-weaken {t = .(L · M)}                  sub (_⊢·_ {L} {M} ⊢L ⊢M)   =
+weaken {t = .(L · M)}                  sub (_⊢·_ {L} {M} ⊢L ⊢M)       =
   (weaken sub ⊢L) ⊢· (weaken sub ⊢M)
+weaken {t = .(Y M)}                    sub (⊢Y {M} ⊢M)                 =
+  ⊢Y (weaken sub ⊢M)
+weaken {t = .(＃ n)}                    sub (⊢＃ {n})                   =
+  ⊢＃ {n = n}
+weaken {t = .(𝓈 M)}                    sub (⊢𝓈 {M} ⊢M)                 =
+  ⊢𝓈 (weaken sub ⊢M)
+weaken {t = .(𝓅 M)}                    sub (⊢𝓅 {M} ⊢M)                 =
+  ⊢𝓅 (weaken sub ⊢M)
+weaken {t = ?⁰ L ↑ M ↓ N}              sub (⊢?⁰ {L} {M} {N} ⊢L ⊢M ⊢N) =
+  ⊢?⁰ (weaken sub ⊢L) (weaken sub ⊢M) (weaken sub ⊢N)
 
 weaken-∅ : ∀ {t T} Γ → ∅ ⊢ t ⦂ T → Γ ⊢ t ⦂ T
 weaken-∅ Γ H0 = weaken ⊆-∅ H0
@@ -159,4 +167,3 @@ swap : ∀ {Γ x y M A B C}
     --------------------------
   → Γ , x ⦂ A , y ⦂ B ⊢ M ⦂ C
 swap {Γ} {x} {y} {M} {A} {B} {C} x≠y ⊢M = weaken (⊆-exch x≠y) ⊢M
--}
