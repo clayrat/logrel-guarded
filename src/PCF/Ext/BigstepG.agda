@@ -8,7 +8,6 @@ open import Data.String
 
 open import Later
 open import PCF.Ext.Term
-open import PCF.Ext.Subst
 
 -- Step-indexed Big-Step Operational (guarded form)
 

@@ -10,7 +10,6 @@ open import Data.Sum
 open import Later
 open import Interlude
 open import PCF.Ext.Term
-open import PCF.Ext.Subst
 open import PCF.Ext.BigstepG
 open import PCF.Ext.Smallstep
 

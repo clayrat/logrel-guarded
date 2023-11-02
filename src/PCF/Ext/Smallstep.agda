@@ -9,22 +9,22 @@ open import Data.String
 open import Later
 open import Interlude
 open import PCF.Ext.Term
-open import PCF.Ext.Subst
 
 infix  1 begin_
 infixr 2 _—→⟨_⟩_
 infix  2 _—↠⁰_
 infix  3 _∎ᵣ
 infix  4 _—→⁅_⁆_
+infix  5 _⁽_⁾
 
 -- Step-indexed Small-Step Operational Semantics
 
 data Step : 𝒰 where
   s⁰ s¹ : Step
 
-s→ℕ : Step → ℕ
-s→ℕ s⁰ = 0
-s→ℕ s¹ = 1
+_⁽_⁾ : {A : 𝒰} → (A → A) → Step → A → A
+_ ⁽ s⁰ ⁾ = id
+f ⁽ s¹ ⁾ = f
 
 data _—→⁅_⁆_ : Term → Step → Term → 𝒰 where
   β-ƛ  : ∀ {x M N}

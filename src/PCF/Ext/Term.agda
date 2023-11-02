@@ -3,7 +3,7 @@ module PCF.Ext.Term where
 open import Prelude
 open import Data.Empty
 --open import Data.Unit
---open import Data.Dec
+open import Data.Dec
 open import Data.Nat hiding (_·_)
 open import Data.String
 open import Structures.IdentitySystem
@@ -22,6 +22,7 @@ infixl 7 _·_
 infix  9 Y_
 infix  9 `_
 infix  9 ＃_
+infix  9 _[_:=_]
 
 -- terms
 
@@ -205,6 +206,22 @@ v-ƛ-inj = Val-path-code.encode
 data IsVal : Term → Val → 𝒰 where
   is-＃ : ∀ {n} → IsVal (＃ n) (v-＃ n)
   is-ƛ  : ∀ {x t} → IsVal (ƛ x ⇒ t) (v-ƛ x t)
+
+-- substitution
+
+_[_:=_] : Term → Id → Term → Term
+(` x)          [ y := T ] with x ≟ y
+... | yes _        = T
+... | no  _        = ` x
+(ƛ x ⇒ S)      [ y := T ] with x ≟ y
+... | yes _        = ƛ x ⇒ S
+... | no  _        = ƛ x ⇒ S [ y := T ]
+(R · S)        [ y := T ] = R [ y := T ] · S [ y := T ]
+(Y S)          [ y := T ] = Y (S [ y := T ])
+(＃ n)         [ y := T ] = ＃ n
+𝓈 S            [ y := T ] = 𝓈 (S [ y := T ])
+𝓅 S            [ y := T ] = 𝓅 (S [ y := T ])
+(?⁰ N ↑ R ↓ S) [ y := T ] = ?⁰ N [ y := T ] ↑ R [ y := T ] ↓ S [ y := T ]
 
 {-
 data Val : Term → 𝒰 where
