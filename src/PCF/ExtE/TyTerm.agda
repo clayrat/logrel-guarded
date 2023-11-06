@@ -254,6 +254,13 @@ data IsVal : Term → Val → 𝒰 where
   is-＃ : ∀ {n} → IsVal (＃ n) (v-＃ n)
   is-ƛ  : ∀ {x A t} → IsVal (ƛ x ⦂ A ⇒ t) (v-ƛ x A t)
 
+IsVal-unique : ∀ N M V
+             → IsVal N V
+             → IsVal M V
+             → N ＝ M
+IsVal-unique .(＃ _)        .(＃ _)        .(v-＃ _)    is-＃ is-＃ = refl
+IsVal-unique .(ƛ _ ⦂ _ ⇒ _) .(ƛ _ ⦂ _ ⇒ _) .(v-ƛ _ _ _) is-ƛ  is-ƛ = refl
+
 -- substitution
 
 _[_:=_] : Term → Id → Term → Term

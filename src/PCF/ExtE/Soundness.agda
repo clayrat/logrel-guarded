@@ -11,7 +11,10 @@ open import Interlude
 open import Guarded.Partial
 open import PCF.ExtE.TyTerm
 open import PCF.ExtE.TyDeriv
+open import PCF.ExtE.Bigstep
 open import PCF.ExtE.Smallstep
+open import PCF.ExtE.SmallstepTy
+open import PCF.ExtE.Correspondence
 open import PCF.ExtE.Denot
 
 -- Soundness
@@ -63,7 +66,7 @@ msubst-lemma : ∀ {M Δ E}
              → (⊢MN : Δ ⊢ msubst E M ⦂ T)
              → (𝒞Δ : 𝒞⟦ Δ ⟧)
              → ℰ⟦ ⊢MN ⟧ 𝒞Δ ＝ ℰ⟦ ⊢M ⟧ (λ S y xs → ℰ⟦ sub y S xs .snd ⟧ 𝒞Δ)
-msubst-lemma = {!!}
+msubst-lemma = ?
 
 -- 2.18
 
@@ -125,3 +128,47 @@ step-sound {T}       {.k}  {.(?⁰ L ↑ M ↓ N)}        {.(?⁰ L′ ↑ M ↓
       (is-prop-β ⊢-is-prop ⊢M ⊢M₁)
       (is-prop-β ⊢-is-prop ⊢N ⊢N₁)
   ∙ δ-ifz {k = k} ⊢L ⊢L′ ⊢M₁ ⊢N₁ (step-sound s ⊢L ⊢L′)
+
+-- 2.19
+
+rtc0-sound : ∀ {M N}
+           → M —↠⁰ N
+           → (⊢M : ∅ ⊢ M ⦂ T)
+           → (⊢N : ∅ ⊢ N ⦂ T)
+           → ℰ⟦ ⊢M ⟧ 𝒞∅ ＝ ℰ⟦ ⊢N ⟧ 𝒞∅
+rtc0-sound {M} {.M} (.M ∎ᵣ)         ⊢M ⊢N =
+  ap (λ q → ℰ⟦ q ⟧ 𝒞∅) (is-prop-β ⊢-is-prop ⊢M ⊢N)
+rtc0-sound {M} {N}  (.M —→⟨ S ⟩ MS) ⊢M ⊢N =
+  let ⊢M₁ = preserve S ⊢M in
+  step-sound S ⊢M ⊢M₁ ∙ rtc0-sound MS ⊢M₁ ⊢N
+
+-- 2.20
+
+rtc-sound : ∀ {M N k}
+          → M =⇒⁅ k ⁆ᵗ N
+          → (⊢M : ∅ ⊢ M ⦂ T)
+          → (⊢N : ∅ ⊢ N ⦂ T)
+          → ℰ⟦ ⊢M ⟧ 𝒞∅ ＝ (iter k δ) (ℰ⟦ ⊢N ⟧ 𝒞∅)
+rtc-sound {T} {M} {k = zero}  (P , sP , eP)          ⊢M ⊢N =
+  J (λ Q eQ → (sQ : M —↠⁰ Q)
+            → ℰ⟦ ⊢M ⟧ 𝒞∅ ＝ ℰ⟦ ⊢N ⟧ 𝒞∅)
+    (λ sQ → rtc0-sound sQ ⊢M ⊢N)
+    (sym eP) sP
+rtc-sound         {k = suc k} (P , R , sP , sR , S▹) ⊢M ⊢N =
+  let ⊢P = rtc-preserve sP ⊢M
+      ⊢R = preserve sR ⊢P
+    in
+    rtc0-sound sP ⊢M ⊢P
+  ∙ step-sound sR ⊢P ⊢R
+  ∙ ap θ (▹-ext $ ▹map (λ q → rtc-sound q ⊢R ⊢N) S▹)
+
+-- 2.21
+
+soundness : ∀ {M N V k}
+          → IsVal N V
+          → M ⇓⁅ k ⁆ᵛ V
+          → (⊢M : ∅ ⊢ M ⦂ T)
+          → (⊢N : ∅ ⊢ N ⦂ T)
+          → ℰ⟦ ⊢M ⟧ 𝒞∅ ＝ (iter k δ) (ℰ⟦ ⊢N ⟧ 𝒞∅)
+soundness {M} {N} {V} iV M⇓ ⊢M ⊢N =
+  rtc-sound (big→small-rtc-v M N V iV M⇓) ⊢M ⊢N

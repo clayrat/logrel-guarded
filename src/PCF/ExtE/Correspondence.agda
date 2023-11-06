@@ -519,3 +519,27 @@ small-rtc→big {k} M Q M⇒ =
   where
   go : ∀ v n → Q⁰ (Qᵀ⁰ Q) v n → Qᵀ (λ w l → (l ＝ 0) × Q w) v n
   go v n (n0 , w , iw , qw) = w , iw , n0 , qw
+
+-- 2.4.1
+
+big→small-rtc-v : {k : ℕ} (M N : Term) (V : Val)
+                → IsVal N V
+                → M ⇓⁅ k ⁆ᵛ V
+                → M =⇒⁅ k ⁆ᵗ N
+big→small-rtc-v {k} M N V iV M⇓ =
+  =⇒-covariant (Qᵀ⁰ (_＝ V)) (_＝ N)
+               (λ T → λ where
+                          (V₁ , iV₁ , e) → IsVal-unique T N V (subst (IsVal T) e iV₁) iV)
+               M k (big→small-rtc M (_＝ V) M⇓)
+
+-- 2.4.2
+
+small-rtc→big-v : {k : ℕ} (M N : Term) (V : Val)
+                → IsVal N V
+                → M =⇒⁅ k ⁆ᵗ N
+                → M ⇓⁅ k ⁆ᵛ V
+small-rtc→big-v {k} M N V iV M⇒ =
+  small-rtc→big M (_＝ V)
+     (=⇒-covariant (_＝ N) (Qᵀ⁰ (_＝ V))
+        (λ T e → V , subst (λ q → IsVal q V) (sym e) iV , refl)
+        M k M⇒)

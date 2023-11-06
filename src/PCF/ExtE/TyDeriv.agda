@@ -230,3 +230,26 @@ swap : ∀ {Γ x y M A B C}
     --------------------------
   → Γ , x ⦂ A , y ⦂ B ⊢ M ⦂ C
 swap {Γ} {x} {y} {M} {A} {B} {C} x≠y ⊢M = weaken (⊆-exch x≠y) ⊢M
+
+-- substitution preserves typing
+
+subst-ty : ∀ {Γ x N V A B}
+  → ∅ ⊢ V ⦂ A
+  → Γ , x ⦂ A ⊢ N ⦂ B
+    --------------------
+  → Γ ⊢ N [ x := V ] ⦂ B
+subst-ty {Γ} {x = y} {V}     ⊢V (⊢` {x} (here et ei)) with x ≟ y
+... | yes _ = weaken-∅ Γ (subst (∅ ⊢ V ⦂_) (sym ei) ⊢V)
+... | no ctra = absurd (ctra et)
+subst-ty     {x = y}         ⊢V (⊢` {x} (there ne ix)) with x ≟ y
+... | yes prf = absurd (ne prf)
+... | no ctra = ⊢` ix
+subst-ty {Γ} {x = y}     {A} ⊢V (⊢ƛ {x} {N} {A = A⁰} {B}  e ⊢N) with x ≟ y
+... | yes prf = ⊢ƛ e (drop (subst (λ q → Γ , q ⦂ A , x ⦂ A⁰ ⊢ N ⦂ B) (sym prf) ⊢N))
+... | no ctra = ⊢ƛ e (subst-ty ⊢V (swap ctra ⊢N))
+subst-ty                     ⊢V (⊢M ⊢· ⊢N)           = (subst-ty ⊢V ⊢M) ⊢· (subst-ty ⊢V ⊢N)
+subst-ty                     ⊢V (⊢Y ⊢N)               = ⊢Y (subst-ty ⊢V ⊢N)
+subst-ty                     ⊢V ⊢＃                    = ⊢＃
+subst-ty                     ⊢V (⊢𝓈 ⊢N)               = ⊢𝓈 (subst-ty ⊢V ⊢N)
+subst-ty                     ⊢V (⊢𝓅 ⊢N)               = ⊢𝓅 (subst-ty ⊢V ⊢N)
+subst-ty                     ⊢V (⊢?⁰ ⊢L ⊢M ⊢N )      = ⊢?⁰ (subst-ty ⊢V ⊢L) (subst-ty ⊢V ⊢M) (subst-ty ⊢V ⊢N)
