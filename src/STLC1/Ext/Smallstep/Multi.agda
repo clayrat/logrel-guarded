@@ -16,7 +16,7 @@ open import STLC1.Ext.Smallstep.Step
 -- multisubstitution
 
 Env : 𝒰
-Env = List (String × Term)
+Env = List (Id × Term)
 
 msubst : Env → Term → Term
 msubst []             t = t

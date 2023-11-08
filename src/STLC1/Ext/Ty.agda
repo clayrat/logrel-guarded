@@ -46,7 +46,7 @@ Context-≃ = ff , iso gg ri li
 data _∋_⦂_ : Ctx → Id → Ty → 𝒰 where
 
   here : ∀ {Γ x A}
-      ------------------
+         ------------------
        → Γ , x ⦂ A ∋ x ⦂ A
 
   there : ∀ {Γ x y A B}
@@ -54,6 +54,8 @@ data _∋_⦂_ : Ctx → Id → Ty → 𝒰 where
         → Γ ∋ x ⦂ A
           ------------------
         → Γ , y ⦂ B ∋ x ⦂ A
+
+-- morally it's a prop but to prove it we need to ford equalities in here
 
 ∅-empty : ∀ {x A} → ¬ (∅ ∋ x ⦂ A)
 ∅-empty ()
@@ -64,13 +66,16 @@ _⊆_ Γ₁ Γ₂ = ∀ t i → Γ₁ ∋ i ⦂ t → Γ₂ ∋ i ⦂ t
 ⊆-∅ : ∀ {Γ} → ∅ ⊆ Γ
 ⊆-∅ t i ()
 
+⊆-refl : ∀ {Γ} → Γ ⊆ Γ
+⊆-refl t i = id
+
 ⊆-ext : ∀ {Γ₁ Γ₂ x A} → Γ₁ ⊆ Γ₂ → (Γ₁ , x ⦂ A) ⊆ (Γ₂ , x ⦂ A)
 ⊆-ext {x} {A} sub .A .x  here         = here
 ⊆-ext         sub  t  i (there ne H1) = there ne (sub t i H1)
 
 ⊆-shadow : ∀ {Γ x A B} → (Γ , x ⦂ A , x ⦂ B) ⊆ (Γ , x ⦂ B)
-⊆-shadow t i here = here
-⊆-shadow t i (there i≠i here) = absurd (i≠i refl)
+⊆-shadow t i  here                   = here
+⊆-shadow t i (there i≠i here)        = absurd (i≠i refl)
 ⊆-shadow t i (there i≠x (there _ p)) = there i≠x p
 
 ⊆-exch : ∀ {Γ x y A B} → x ≠ y → (Γ , y ⦂ B , x ⦂ A) ⊆ (Γ , x ⦂ A , y ⦂ B)
@@ -132,3 +137,4 @@ swap : ∀ {Γ x y M A B C}
     --------------------------
   → Γ , x ⦂ A , y ⦂ B ⊢ M ⦂ C
 swap {Γ} {x} {y} {M} {A} {B} {C} x≠y ⊢M = weaken (⊆-exch x≠y) ⊢M
+

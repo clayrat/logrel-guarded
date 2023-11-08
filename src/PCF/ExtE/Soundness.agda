@@ -51,127 +51,126 @@ private variable
 δ-ifz {γ} {k = s⁰} ⊢L ⊢L′ ⊢M ⊢N eq = ap (ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ)) eq
 δ-ifz     {k = s¹} ⊢L ⊢L′ ⊢M ⊢N eq = ifz-δ ⊢L ⊢L′ ⊢M ⊢N eq
 
--- 2.17 (simplified for Δ = ∅)
+-- 2.17 (simplified for Δ = ∅ and a single substitution)
 
 weaken-𝒞 : ∀ {Γ Δ}
          → Γ ⊆ Δ
          → 𝒞⟦ Δ ⟧ → 𝒞⟦ Γ ⟧
 weaken-𝒞 sub 𝒞Δ T x ix = 𝒞Δ T x (sub T x ix)
 
+weaken-𝒞-∅ : ∀ {Γ}
+            → (𝒞Γ : 𝒞⟦ Γ ⟧)
+            → weaken-𝒞 ⊆-∅ 𝒞Γ ＝ 𝒞∅
+weaken-𝒞-∅ 𝒞Γ = fun-ext λ S → fun-ext λ x → fun-ext λ ()
+
+weaken-𝒞-ext : ∀ {Γ Δ A x}
+             → (sub : Γ ⊆ Δ)
+             → (𝒞Δ : 𝒞⟦ Δ ⟧)
+             → (ta : 𝒯⟦ A ⟧)
+             → weaken-𝒞 (⊆-ext {x = x} sub) (𝒞Δ ＆ ta) ＝ (weaken-𝒞 sub 𝒞Δ ＆ ta)
+weaken-𝒞-ext sub 𝒞Δ ta =
+  fun-ext λ T → fun-ext λ x → fun-ext λ where
+    (here ei et) → refl
+    (there ne ix) → refl
+
+weaken-𝒞-shadow : ∀ {Γ A B x}
+                → (𝒞Γ : 𝒞⟦ Γ ⟧)
+                → (ta : 𝒯⟦ A ⟧)
+                → (tb : 𝒯⟦ B ⟧)
+                → weaken-𝒞 (⊆-shadow {x = x}) (𝒞Γ ＆ ta) ＝ ((𝒞Γ ＆ tb) ＆ ta)
+weaken-𝒞-shadow 𝒞Γ ta tb =
+  fun-ext λ T → fun-ext λ x → fun-ext λ where
+    (here ei et) → refl
+    (there ne (here ei et)) → absurd (ne ei)
+    (there ne₁ (there ne₂ p)) → refl
+
+weaken-𝒞-exch : ∀ {Γ A B x y}
+                → (ctra : x ≠ y)
+                → (𝒞Γ : 𝒞⟦ Γ ⟧)
+                → (ta : 𝒯⟦ A ⟧)
+                → (tb : 𝒯⟦ B ⟧)
+                → weaken-𝒞 (⊆-exch ctra) ((𝒞Γ ＆ ta) ＆ tb) ＝ ((𝒞Γ ＆ tb) ＆ ta)
+weaken-𝒞-exch ctra 𝒞Γ ta tb =
+  fun-ext λ T → fun-ext λ x → fun-ext λ where
+    (here ei et) → refl
+    (there ne (here ei et)) → refl
+    (there ne₁ (there ne₂ p)) → refl
+
 weaken-lemma : ∀ {Γ Δ M T}
            → (sub : Γ ⊆ Δ)
            → (𝒞Δ : 𝒞⟦ Δ ⟧)
            → (⊢M : Γ ⊢ M ⦂ T)
            → ℰ⟦ weaken sub ⊢M ⟧ 𝒞Δ ＝ ℰ⟦ ⊢M ⟧ (weaken-𝒞 sub 𝒞Δ)
-weaken-lemma {M = .(` _)} sub 𝒞Δ (⊢` x) = refl
-weaken-lemma {M = .(ƛ _ ⦂ _ ⇒ _)} sub 𝒞Δ (⊢ƛ x ⊢M) =
+weaken-lemma sub 𝒞Δ (⊢` x)           = refl
+weaken-lemma sub 𝒞Δ (⊢ƛ x ⊢M)       =
   fun-ext λ ta →
       weaken-lemma (⊆-ext sub) (𝒞Δ ＆ ta) ⊢M
-    ∙ ap ℰ⟦ ⊢M ⟧ (fun-ext λ S →          -- TODO extract into `weaken-𝒞 (⊆-ext sub) (𝒞Δ ＆ ta) ＝ (weaken-𝒞 sub 𝒞Δ ＆ ta)`
-                  fun-ext λ x →
-                  fun-ext λ where
-                              (here x x₁) → refl
-                              (there x ix) → refl)
-weaken-lemma {M = .(_ · _)} sub 𝒞Δ (⊢M ⊢· ⊢N) = ap² (λ q w → q w) (weaken-lemma sub 𝒞Δ ⊢M) (weaken-lemma sub 𝒞Δ ⊢N)
-weaken-lemma {M = .(Y _)} sub 𝒞Δ (⊢Y ⊢M) = ap (λ q → fix (λ x → θ (▹map q x))) (weaken-lemma sub 𝒞Δ ⊢M)
-weaken-lemma {M = .(＃ _)} sub 𝒞Δ ⊢＃ = refl
-weaken-lemma {M = .(𝓈 _)} sub 𝒞Δ (⊢𝓈 ⊢M) = ap (mapᵖ suc) (weaken-lemma sub 𝒞Δ ⊢M)
-weaken-lemma {M = .(𝓅 _)} sub 𝒞Δ (⊢𝓅 ⊢M) = ap (mapᵖ pred) (weaken-lemma sub 𝒞Δ ⊢M)
-weaken-lemma {M = .(?⁰ _ ↑ _ ↓ _)} sub 𝒞Δ (⊢?⁰ ⊢L ⊢M ⊢N) = ap³-simple ifz^ (weaken-lemma sub 𝒞Δ ⊢M) (weaken-lemma sub 𝒞Δ ⊢N) (weaken-lemma sub 𝒞Δ ⊢L)
+    ∙ ap ℰ⟦ ⊢M ⟧ (weaken-𝒞-ext sub 𝒞Δ ta)
+weaken-lemma sub 𝒞Δ (⊢M ⊢· ⊢N)     =
+  ap² _$_ (weaken-lemma sub 𝒞Δ ⊢M)
+          (weaken-lemma sub 𝒞Δ ⊢N)
+weaken-lemma sub 𝒞Δ (⊢Y ⊢M)         =
+  ap (λ q → fix (θ ∘ ▹map q)) (weaken-lemma sub 𝒞Δ ⊢M)
+weaken-lemma sub 𝒞Δ ⊢＃              = refl
+weaken-lemma sub 𝒞Δ (⊢𝓈 ⊢M)         =
+  ap (mapᵖ suc) (weaken-lemma sub 𝒞Δ ⊢M)
+weaken-lemma sub 𝒞Δ (⊢𝓅 ⊢M)         =
+  ap (mapᵖ pred) (weaken-lemma sub 𝒞Δ ⊢M)
+weaken-lemma sub 𝒞Δ (⊢?⁰ ⊢L ⊢M ⊢N) =
+  ap³-simple ifz^ (weaken-lemma sub 𝒞Δ ⊢M)
+                  (weaken-lemma sub 𝒞Δ ⊢N)
+                  (weaken-lemma sub 𝒞Δ ⊢L)
 
 subst-lemma : ∀ {M} {x} {S} {T} {N} {Γ}
             → (𝒞Γ : 𝒞⟦ Γ ⟧)
             → (⊢N : ∅ ⊢ N ⦂ S)
             → (⊢M : Γ , x ⦂ S ⊢ M ⦂ T)
             → ℰ⟦ subst-ty ⊢N ⊢M ⟧ 𝒞Γ ＝ ℰ⟦ ⊢M ⟧ (𝒞Γ ＆ ℰ⟦ ⊢N ⟧ 𝒞∅)
-subst-lemma {.(` _)} {x = y} {S} {N} 𝒞Γ ⊢N (⊢` (here {x} ei eT)) with x ≟ y
-... | yes prf = J (λ T₁ e₁ → (⊢N₁ : ∅ ⊢ N ⦂ S)
-                            → ℰ⟦ weaken ⊆-∅ (subst (∅ ⊢ N ⦂_) e₁ ⊢N₁) ⟧ 𝒞Γ ＝ subst (𝒯⟦_⟧) e₁ (ℰ⟦ ⊢N₁ ⟧ 𝒞∅))
-                  (λ ⊢N₁ →   ap (λ q → ℰ⟦ weaken ⊆-∅ q ⟧ 𝒞Γ) (subst-refl {B = (∅ ⊢ N ⦂_)} ⊢N₁)
-                           ∙ weaken-lemma ⊆-∅ 𝒞Γ ⊢N₁
-                           ∙ ap ℰ⟦ ⊢N₁ ⟧ (fun-ext λ S →  -- TODO extract into `weaken-𝒞 ⊆-∅ 𝒞Γ ＝ 𝒞∅`
-                                            fun-ext λ x →
-                                            fun-ext λ ())
-
-                           ∙ sym (subst-refl {B = 𝒯⟦_⟧} (ℰ⟦ ⊢N₁ ⟧ 𝒞∅)))
-                  (sym eT)
-                  ⊢N
+subst-lemma {x = y} {S} {N} 𝒞Γ ⊢N (⊢` (here {x} ei eT)) with x ≟ y
+... | yes prf =
+        J (λ T₁ e₁ → (⊢N₁ : ∅ ⊢ N ⦂ S)
+                   → ℰ⟦ weaken-∅ _ (subst (∅ ⊢ N ⦂_) e₁ ⊢N₁) ⟧ 𝒞Γ
+                   ＝ subst (𝒯⟦_⟧) e₁ (ℰ⟦ ⊢N₁ ⟧ 𝒞∅))
+          (λ ⊢N₁ →   ap (λ q → ℰ⟦ weaken-∅ _ q ⟧ 𝒞Γ)
+                         (subst-refl {B = (∅ ⊢ N ⦂_)} ⊢N₁)
+                    ∙ weaken-lemma ⊆-∅ 𝒞Γ ⊢N₁
+                    ∙ ap ℰ⟦ ⊢N₁ ⟧ (weaken-𝒞-∅ 𝒞Γ)
+                    ∙ sym (subst-refl {B = 𝒯⟦_⟧} (ℰ⟦ ⊢N₁ ⟧ 𝒞∅)))
+          (sym eT) ⊢N
 ... | no ctra = absurd (ctra ei)
-subst-lemma {.(` _)} {x = y} 𝒞Γ ⊢N (⊢` (there {x} ne ix)) with x ≟ y
+subst-lemma {x = y}         𝒞Γ ⊢N (⊢` (there {x} ne ix)) with x ≟ y
 ... | yes prf = absurd (ne prf)
 ... | no ctra = refl
-subst-lemma {.(ƛ _ ⦂ _ ⇒ _)} {x = y} {S} {Γ} 𝒞Γ ⊢N (⊢ƛ {x} {N} {A} {B} e ⊢M) with x ≟ y
-... | yes prf = fun-ext λ ta → J (λ y₁ ey → (⊢M₁ : Γ , y₁ ⦂ S , x ⦂ A ⊢ N ⦂ B)
-                                          → ℰ⟦ weaken ⊆-shadow (subst (λ q → (Γ , q ⦂ S , x ⦂ A) ⊢ N ⦂ B) (sym ey) ⊢M₁) ⟧ (𝒞Γ ＆ ta) ＝ ℰ⟦ ⊢M₁ ⟧ ((𝒞Γ ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) ＆ ta)
-                                            )
-                                 (λ ⊢M₁ → ap (λ q → ℰ⟦ weaken ⊆-shadow q ⟧ (𝒞Γ ＆ ta)) (subst-refl {B = λ q → (Γ , q ⦂ S , x ⦂ A) ⊢ N ⦂ B} ⊢M₁)
-                                        ∙ weaken-lemma ⊆-shadow (𝒞Γ ＆ ta) ⊢M₁
-                                        -- TODO extract into `weaken-𝒞 ⊆-shadow (𝒞Γ ＆ ta) ＝ ((𝒞Γ ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) ＆ ta)`
-                                        ∙ ap (ℰ⟦ ⊢M₁ ⟧) (fun-ext λ S →
-                                                         fun-ext λ x →
-                                                         fun-ext λ where
-                                                            (here x x₁) → refl
-                                                            (there x (here x₁ x₂)) → absurd (x x₁)
-                                                            (there x (there x₁ p)) → refl)
-                                 )
-                                 prf ⊢M
-... | no ctra = fun-ext λ ta → subst-lemma (𝒞Γ ＆ ta) ⊢N (weaken (⊆-exch ctra) ⊢M)
-                               ∙ weaken-lemma (⊆-exch ctra) ((𝒞Γ ＆ ta) ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) ⊢M
-                               ∙ ap ℰ⟦ ⊢M ⟧ (fun-ext λ S →  -- TODO extract into smth?
-                                            fun-ext λ x →
-                                            fun-ext λ where
-                                                        (here x x₁) → refl
-                                                        (there x (here x₁ x₂)) → refl
-                                                        (there x (there x₁ p)) → refl)
-subst-lemma {.(_ · _)} 𝒞Γ ⊢N (MM ⊢· MM₁) = ap² (λ q w → q w) (subst-lemma 𝒞Γ ⊢N MM) (subst-lemma 𝒞Γ ⊢N MM₁)
-subst-lemma {.(Y _)} 𝒞Γ ⊢N (⊢Y MM) = ap (λ q → fix (λ x → θ (▹map q x))) (subst-lemma 𝒞Γ ⊢N MM)
-subst-lemma {.(＃ _)} 𝒞Γ ⊢N ⊢＃ = refl
-subst-lemma {.(𝓈 _)} 𝒞Γ ⊢N (⊢𝓈 MM) = ap (mapᵖ suc) (subst-lemma 𝒞Γ ⊢N MM)
-subst-lemma {.(𝓅 _)} 𝒞Γ ⊢N (⊢𝓅 MM) = ap (mapᵖ pred) (subst-lemma 𝒞Γ ⊢N MM)
-subst-lemma {.(?⁰ _ ↑ _ ↓ _)} 𝒞Γ ⊢N (⊢?⁰ MM MM₁ MM₂) = ap³-simple ifz^ (subst-lemma 𝒞Γ ⊢N MM₁) (subst-lemma 𝒞Γ ⊢N MM₂) (subst-lemma 𝒞Γ ⊢N MM)
-
--- multisubstitution
-
-Env : 𝒰
-Env = List (Id × Term)
-
-msubst : Env → Term → Term
-msubst []             t = t
-msubst ((x , s) ∷ ss) t = msubst ss (t [ x := s ])
-
--- TODO force Δ = ∅
-data Inst (Δ : Ctx) : Ctx → Env → 𝒰 where
-  I-nil  : Inst Δ ∅ []
-  I-cons : ∀ {x T N Γ E}
-         → Δ ⊢ N ⦂ T
-         → Inst Δ Γ E
-         → Inst Δ (Γ , x ⦂ T) ((x , N) ∷ E)
-
--- TODO redefine as Inst-𝒞 (I-cons ⊢N I) 𝒞∅ = (Inst-𝒞 I 𝒞∅ ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) !!
-Inst-𝒞 : ∀ {Δ E}
-       → Inst Δ Γ E
-       → 𝒞⟦ Δ ⟧ → 𝒞⟦ Γ ⟧
-Inst-𝒞 {E = .((x , N) ∷ E)} (I-cons {x} {T} {N} {E} ⊢N I) 𝒞Δ S y (here ex eT)  =
-  subst (𝒯⟦_⟧) (sym eT) (ℰ⟦ ⊢N ⟧ 𝒞Δ)
-Inst-𝒞 {E = .((x , N) ∷ E)} (I-cons {x} {T} {N} {E} ⊢N I) 𝒞Δ S y (there ne ix) =
-  Inst-𝒞 I 𝒞Δ S y ix
-
-msubst-lemma : ∀ {M E}
-             → (i : Inst ∅ Γ E)
-             → (⊢M : Γ ⊢ M ⦂ T)
-             → (⊢MN : ∅ ⊢ msubst E M ⦂ T)
-             → ℰ⟦ ⊢MN ⟧ 𝒞∅ ＝ ℰ⟦ ⊢M ⟧ (Inst-𝒞 i 𝒞∅)
-msubst-lemma {M} {E = .[]} I-nil tM tMN = ap² (λ q w → ℰ⟦ q ⟧ w) (is-prop-β ⊢-is-prop tMN tM)
-                                                                 (fun-ext λ S → fun-ext λ x → fun-ext λ ix →  -- TODO extract into smth
-                                                                   absurd (∅-empty ix))
-msubst-lemma {E = .((_ , _) ∷ _)} (I-cons {x} {T} {N} {E} ⊢N I) ⊢M ⊢MN =
-    msubst-lemma {E = E} I (subst-ty ⊢N ⊢M) ⊢MN
-  ∙ subst-lemma (Inst-𝒞 I 𝒞∅) ⊢N ⊢M
-  ∙ ap ℰ⟦ ⊢M ⟧ (fun-ext λ S →    -- TODO extract into `(Inst-𝒞 I 𝒞∅ ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) ＝ Inst-𝒞 (I-cons ⊢N I) 𝒞∅` (redundant after refactor)
-                fun-ext λ x →
-                fun-ext λ where
-                            (here x x₁) → refl
-                            (there x p) → refl)
+subst-lemma {x = y} {S} {Γ} 𝒞Γ ⊢N (⊢ƛ {x} {N} {A} {B} e ⊢M) with x ≟ y
+... | yes prf =
+        fun-ext λ ta →
+          J (λ y₁ ey → (⊢M₁ : Γ , y₁ ⦂ S , x ⦂ A ⊢ N ⦂ B)
+                      → ℰ⟦ drop (subst (λ q → (Γ , q ⦂ S , x ⦂ A) ⊢ N ⦂ B) (sym ey) ⊢M₁) ⟧ (𝒞Γ ＆ ta)
+                      ＝ ℰ⟦ ⊢M₁ ⟧ ((𝒞Γ ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) ＆ ta))
+            (λ ⊢M₁ →   ap (λ q → ℰ⟦ drop q ⟧ (𝒞Γ ＆ ta))
+                           (subst-refl {B = λ q → (Γ , q ⦂ S , x ⦂ A) ⊢ N ⦂ B} ⊢M₁)
+                      ∙ weaken-lemma ⊆-shadow (𝒞Γ ＆ ta) ⊢M₁
+                      ∙ ap (ℰ⟦ ⊢M₁ ⟧) (weaken-𝒞-shadow 𝒞Γ ta (ℰ⟦ ⊢N ⟧ 𝒞∅)))
+            prf ⊢M
+... | no ctra =
+        fun-ext λ ta →
+            subst-lemma (𝒞Γ ＆ ta) ⊢N (swap ctra ⊢M)
+          ∙ weaken-lemma (⊆-exch ctra) ((𝒞Γ ＆ ta) ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) ⊢M
+          ∙ ap ℰ⟦ ⊢M ⟧ (weaken-𝒞-exch ctra 𝒞Γ ta (ℰ⟦ ⊢N ⟧ 𝒞∅))
+subst-lemma                 𝒞Γ ⊢N (⊢M ⊢· ⊢M₁)              =
+  ap² _$_ (subst-lemma 𝒞Γ ⊢N ⊢M)
+          (subst-lemma 𝒞Γ ⊢N ⊢M₁)
+subst-lemma                 𝒞Γ ⊢N (⊢Y ⊢M)                   =
+  ap (λ q → fix (θ ∘ ▹map q)) (subst-lemma 𝒞Γ ⊢N ⊢M)
+subst-lemma                 𝒞Γ ⊢N  ⊢＃                       = refl
+subst-lemma                 𝒞Γ ⊢N (⊢𝓈 ⊢M)                   =
+  ap (mapᵖ suc) (subst-lemma 𝒞Γ ⊢N ⊢M)
+subst-lemma                 𝒞Γ ⊢N (⊢𝓅 ⊢M)                   =
+  ap (mapᵖ pred) (subst-lemma 𝒞Γ ⊢N ⊢M)
+subst-lemma                 𝒞Γ ⊢N (⊢?⁰ ⊢M ⊢M₁ ⊢M₂)         =
+  ap³-simple ifz^ (subst-lemma 𝒞Γ ⊢N ⊢M₁)
+                  (subst-lemma 𝒞Γ ⊢N ⊢M₂)
+                  (subst-lemma 𝒞Γ ⊢N ⊢M)
 
 -- 2.18
 
@@ -181,12 +180,8 @@ step-sound : ∀ {k M N}
            → (⊢N : ∅ ⊢ N ⦂ T)
            → ℰ⟦ ⊢M ⟧ 𝒞∅ ＝ (δ ⁽ k ⁾) (ℰ⟦ ⊢N ⟧ 𝒞∅)
 step-sound {T}       {.s⁰} {.((ƛ x ⦂ A ⇒ M) · N)}   {.(M [ x := N ])}  (β-ƛ {x} {M} {N} {A})         (⊢ƛ e ⊢M ⊢· ⊢N)       ⊢MN                 =
-  ap (ℰ⟦ ⊢M ⟧)           -- TODO will be redundant after refactor
-     (fun-ext λ S →
-      fun-ext λ y →
-      fun-ext λ where
-         (here ei et) → refl)
-  ∙ sym (msubst-lemma (I-cons ⊢N I-nil) ⊢M ⊢MN)
+  sym (ap (λ q → ℰ⟦ q ⟧ 𝒞∅) (is-prop-β ⊢-is-prop ⊢MN (subst-ty ⊢N ⊢M))
+     ∙ subst-lemma 𝒞∅ ⊢N ⊢M)
 step-sound {T}       {.s¹} {.(Y M)}                {.(M · Y M)}        (Ｙ {M})                      (⊢Y ⊢M)               (⊢M₁ ⊢· ⊢Y ⊢M₂)    =
   happly (Y-δ ⊢M) 𝒞∅
   ∙ ap (λ q → δ (q 𝒞∅))
@@ -269,4 +264,3 @@ soundness : ∀ {M N V k}
           → ℰ⟦ ⊢M ⟧ 𝒞∅ ＝ (iter k δ) (ℰ⟦ ⊢N ⟧ 𝒞∅)
 soundness {M} {N} {V} iV M⇓ ⊢M ⊢N =
   rtc-sound (big→small-rtc-v M N V iV M⇓) ⊢M ⊢N
-

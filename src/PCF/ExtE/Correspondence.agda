@@ -74,7 +74,7 @@ small-rtc-big-v : {k : ℕ} (M N : Term) (V : Val)
 small-rtc-big-v M N V = small-rtc-big M N (λ v l → (l ＝ 0) × (v ＝ V))
 
 -- 2.7
-
+-- we define it as a typelevel function by induction on k to work around size issues
 _⇛⁅_⁆_ : Term → ℕ → (Term → ℕ → 𝒰) → 𝒰
 M ⇛⁅ zero ⁆  Q =  Σ[ N ꞉ Term ] (M —↠⁰ N) × Q N 0
 M ⇛⁅ suc k ⁆ Q = (Σ[ N ꞉ Term ] (M —↠⁰ N) × Q N (suc k))
@@ -95,7 +95,7 @@ M ⇛⁅ suc k ⁆ Q = (Σ[ N ꞉ Term ] (M —↠⁰ N) × Q N (suc k))
    → M ⇛⁅ suc k ⁆ Q
 ⇛ˢ {M′} {M″} MM′ MM″ MQ▹ = inr (M′ , M″ , MM′ , MM″ , MQ▹)
 
--- TODO define ⇛-elim to reduce duplication
+-- TODO define ⇛-elim to remove duplication for the k case
 
 -- 2.8
 

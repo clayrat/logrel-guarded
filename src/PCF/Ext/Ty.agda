@@ -132,6 +132,8 @@ data _⊢_⦂_ : Ctx → Term → Ty → 𝒰 where
       -------------------
     → Γ ⊢ ?⁰ L ↑ M ↓ N ⦂ A
 
+-- no typing uniqueness!
+
 -- weakening / renaming
 
 weaken : ∀ {Γ₁ Γ₂ t T} → Γ₁ ⊆ Γ₂ → Γ₁ ⊢ t ⦂ T → Γ₂ ⊢ t ⦂ T

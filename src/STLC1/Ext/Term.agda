@@ -21,10 +21,10 @@ infix  9 `_
 -- terms
 
 data Term : 𝒰 where
-  𝓉𝓉    : Term
-  `_    : Id → Term
+  𝓉𝓉   : Term
+  `_   : Id → Term
   ƛ_⇒_ : Id → Term → Term
-  _·_   : Term → Term → Term
+  _·_  : Term → Term → Term
 
 -- terms form a set
 
