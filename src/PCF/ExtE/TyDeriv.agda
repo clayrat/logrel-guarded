@@ -3,7 +3,7 @@ module PCF.ExtE.TyDeriv where
 open import Prelude hiding (_⊆_)
 open import Data.Unit
 open import Data.Empty
-open import Data.Dec
+open import Data.Dec renaming (elim to elimᵈ ; rec to recᵈ)
 open import Data.String
 open import Data.List
 open import Structures.IdentitySystem hiding (J)
@@ -238,18 +238,24 @@ subst-ty : ∀ {Γ x N V A B}
   → Γ , x ⦂ A ⊢ N ⦂ B
     --------------------
   → Γ ⊢ N [ x := V ] ⦂ B
-subst-ty {Γ} {x = y} {V}     ⊢V (⊢` {x} (here et ei)) with x ≟ y
-... | yes _ = weaken-∅ Γ (subst (∅ ⊢ V ⦂_) (sym ei) ⊢V)
-... | no ctra = absurd (ctra et)
-subst-ty     {x = y}         ⊢V (⊢` {x} (there ne ix)) with x ≟ y
-... | yes prf = absurd (ne prf)
-... | no ctra = ⊢` ix
-subst-ty {Γ} {x = y}     {A} ⊢V (⊢ƛ {x} {N} {A = A⁰} {B}  e ⊢N) with x ≟ y
-... | yes prf = ⊢ƛ e (drop (subst (λ q → Γ , q ⦂ A , x ⦂ A⁰ ⊢ N ⦂ B) (sym prf) ⊢N))
-... | no ctra = ⊢ƛ e (subst-ty ⊢V (swap ctra ⊢N))
-subst-ty                     ⊢V (⊢M ⊢· ⊢N)           = (subst-ty ⊢V ⊢M) ⊢· (subst-ty ⊢V ⊢N)
-subst-ty                     ⊢V (⊢Y ⊢N)               = ⊢Y (subst-ty ⊢V ⊢N)
-subst-ty                     ⊢V ⊢＃                    = ⊢＃
-subst-ty                     ⊢V (⊢𝓈 ⊢N)               = ⊢𝓈 (subst-ty ⊢V ⊢N)
-subst-ty                     ⊢V (⊢𝓅 ⊢N)               = ⊢𝓅 (subst-ty ⊢V ⊢N)
-subst-ty                     ⊢V (⊢?⁰ ⊢L ⊢M ⊢N )      = ⊢?⁰ (subst-ty ⊢V ⊢L) (subst-ty ⊢V ⊢M) (subst-ty ⊢V ⊢N)
+subst-ty {Γ} {x = y} {V}      {B} ⊢V (⊢` {x} (here et ei)) =
+  elimᵈ {C = λ q → Γ ⊢ recᵈ (λ _ → V) (λ _ → ` x) q ⦂ B}
+        (λ _    → weaken-∅ Γ (subst (∅ ⊢ V ⦂_) (sym ei) ⊢V))
+        (λ ctra → absurd (ctra et))
+        (x ≟ y)
+subst-ty {Γ} {x = y} {V}      {B} ⊢V (⊢` {x} (there ne ix)) =
+  elimᵈ {C = λ q → Γ ⊢ recᵈ (λ _ → V) (λ _ → ` x) q ⦂ B}
+        (λ prf  → absurd (ne prf))
+        (λ _    → ⊢` ix)
+        (x ≟ y)
+subst-ty {Γ} {x = y} {V} {A}      ⊢V (⊢ƛ {x} {N} {A = A⁰} {B} {T} e ⊢N) =
+  elimᵈ {C = λ q → Γ ⊢ recᵈ (λ _ → ƛ x ⦂ T ⇒ N) (λ _ → ƛ x ⦂ T ⇒ N [ y := V ]) q ⦂ A⁰ ⇒ B}
+        (λ prf  → ⊢ƛ e (drop (subst (λ q → Γ , q ⦂ A , x ⦂ A⁰ ⊢ N ⦂ B) (sym prf) ⊢N)))
+        (λ ctra → ⊢ƛ e (subst-ty ⊢V (swap ctra ⊢N)))
+        (x ≟ y)
+subst-ty                          ⊢V (⊢M ⊢· ⊢N)           = (subst-ty ⊢V ⊢M) ⊢· (subst-ty ⊢V ⊢N)
+subst-ty                          ⊢V (⊢Y ⊢N)               = ⊢Y (subst-ty ⊢V ⊢N)
+subst-ty                          ⊢V ⊢＃                    = ⊢＃
+subst-ty                          ⊢V (⊢𝓈 ⊢N)               = ⊢𝓈 (subst-ty ⊢V ⊢N)
+subst-ty                          ⊢V (⊢𝓅 ⊢N)               = ⊢𝓅 (subst-ty ⊢V ⊢N)
+subst-ty                          ⊢V (⊢?⁰ ⊢L ⊢M ⊢N )      = ⊢?⁰ (subst-ty ⊢V ⊢L) (subst-ty ⊢V ⊢M) (subst-ty ⊢V ⊢N)

@@ -3,7 +3,7 @@ module PCF.ExtE.TyTerm where
 open import Prelude
 open import Data.Empty
 open import Data.Unit
-open import Data.Dec
+open import Data.Dec renaming (rec to recᵈ)
 open import Data.Nat hiding (_·_)
 open import Data.String
 open import Structures.IdentitySystem
@@ -264,12 +264,8 @@ IsVal-unique .(ƛ _ ⦂ _ ⇒ _) .(ƛ _ ⦂ _ ⇒ _) .(v-ƛ _ _ _) is-ƛ  is-ƛ 
 -- substitution
 
 _[_:=_] : Term → Id → Term → Term
-(` x)          [ y := T ] with x ≟ y
-... | yes _        = T
-... | no  _        = ` x
-(ƛ x ⦂ A ⇒ S)  [ y := T ] with x ≟ y
-... | yes _        = ƛ x ⦂ A ⇒ S
-... | no  _        = ƛ x ⦂ A ⇒ (S [ y := T ])
+(` x)          [ y := T ] = recᵈ (λ _ → T) (λ _ → ` x) (x ≟ y)
+(ƛ x ⦂ A ⇒ S)  [ y := T ] = recᵈ (λ _ → ƛ x ⦂ A ⇒ S) (λ _ → ƛ x ⦂ A ⇒ (S [ y := T ])) (x ≟ y)
 (R · S)        [ y := T ] = R [ y := T ] · S [ y := T ]
 (Y S)          [ y := T ] = Y (S [ y := T ])
 (＃ n)         [ y := T ] = ＃ n
