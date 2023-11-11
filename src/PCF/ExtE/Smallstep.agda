@@ -22,6 +22,13 @@ infix  5 _⁽_⁾
 data Step : 𝒰 where
   s⁰ s¹ : Step
 
+s⁰≠s¹ : s⁰ ≠ s¹
+s⁰≠s¹ e = subst step-discr e tt
+  where
+  step-discr : Step → 𝒰
+  step-discr s⁰ = ⊤
+  step-discr s¹ = ⊥
+
 _⁽_⁾ : {A : 𝒰} → (A → A) → Step → A → A
 _ ⁽ s⁰ ⁾ = id
 f ⁽ s¹ ⁾ = f
@@ -74,12 +81,15 @@ data _—→⁅_⁆_ : Term → Step → Term → 𝒰 where
         -------------------
       → ?⁰ L ↑ M ↓ N —→⁅ k ⁆ ?⁰ L′ ↑ M ↓ N
 
+¬#—→ : ∀ {n k N} → ¬ (＃ n —→⁅ k ⁆ N)
+¬#—→ ()
+
 -- 2.1
 step-det : ∀ M k N k′ N′
          → M —→⁅ k  ⁆ N
          → M —→⁅ k′ ⁆ N′
          → (k ＝ k′) × (N ＝ N′)
-step-det .((ƛ x ⦂ A ⇒ M) · N)       .s⁰ .(M [ x := N ]) .s⁰ .(M [ x := N ])  (β-ƛ {x} {M} {N} {A})               β-ƛ               = refl , refl
+step-det .((ƛ x ⦂ A ⇒ M) · N)   .s⁰ .(M [ x := N ]) .s⁰ .(M [ x := N ])  (β-ƛ {x} {M} {N} {A})           β-ƛ               = refl , refl
 step-det .(Y _)                 .s¹ .(_ · Y _)      .s¹ .(_ · Y _)        Ｙ                             Ｙ                = refl , refl
 step-det .(𝓈 (＃ _))            .s⁰ .(＃ _)          .s⁰ .(＃ _)           β-𝓈                           β-𝓈               = refl , refl
 step-det .(𝓅 (＃ 0))            .s⁰ .(＃ 0)          .s⁰ .(＃ 0)           β-𝓅⁰                          β-𝓅⁰              = refl , refl
