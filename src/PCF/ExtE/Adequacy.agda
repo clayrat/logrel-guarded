@@ -53,7 +53,26 @@ open import PCF.ExtE.Soundness
 
 -- 2.25
 
+ap-𝓡 : ∀ {S T M L f▹ r▹}
+     → ∅ ⊢ L ⦂ S
+     → ▸ (▹map (𝓡 (S ⇒ T)) f▹ ⊛ next M)
+     → ▸ (▹map (𝓡 S) r▹ ⊛ next L)
+     → ▸ (▹map (𝓡 T) (f▹ ⊛ r▹) ⊛ next (M · L))
+ap-𝓡 {L} {r▹} ⊢L Rf Rr =
+  λ α → Rf α (r▹ α) L ⊢L (Rr α)
+
 -- 2.26
+
+lift-𝓡𝓝 : ∀ {M N T}
+          → (σ▹ : ▹ 𝒯⟦ T ⟧)
+          → M —→⁅ s¹ ⁆ N
+          → ▸ (▹map (𝓡 T) σ▹ ⊛ next N)
+          → 𝓡 T (θ σ▹) M
+lift-𝓡𝓝 {M} {N} {T = S ⇒ T} σ▹ S1 R▹ β P ⊢P RP =
+  lift-𝓡𝓝 (σ▹ ⊛ next β) (ξ-· S1) $
+  ap-𝓡 {T = T} ⊢P R▹ (next RP)
+lift-𝓡𝓝 {M} {N} {T = 𝓝}    σ▹ S1 R▹            =
+  𝓡𝓝-⇉later M N (M ∎ᵣ) S1 R▹
 
 -- 2.27.1
 
@@ -196,8 +215,15 @@ fundamental-lemma {E} {M = .(L · M)} {T}  I (_⊢·_ {L} {M} ⊢L ⊢M)     =
         (msubst E M)
         (Inst-closed-msubst I ⊢M) $
   fundamental-lemma I ⊢M
-fundamental-lemma     {M = .(Y _)}          I (⊢Y ⊢M)         =
-  {!!}
+fundamental-lemma {E} {M = .(Y M)} {T}         I (⊢Y {M} ⊢M)         =
+  fix λ ih▹ →
+    subst (λ q → 𝓡 T (fix (θ ∘ ▹map (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I)))) q) (sym $ msubst-Y E M) $
+    subst (λ q → 𝓡 T q (Y (msubst E M))) (sym $ happly (Y-δ ⊢M) (Inst-𝒞 I)) $
+    lift-𝓡𝓝 (next (ℰ⟦ ⊢M ⊢· ⊢Y ⊢M ⟧ (Inst-𝒞 I))) Ｙ $
+    subst (λ q → ▹ 𝓡 T (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I) (fix (θ ∘ ▹map (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I))))) (msubst E M · q)) (msubst-Y E M) $
+    ▹map (fundamental-lemma I ⊢M (fix (θ ∘ ▹map (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I))))
+                                         (msubst E (Y M))
+                                         (Inst-closed-msubst I (⊢Y ⊢M))) ih▹
 fundamental-lemma {E} {M = .(＃ n)}         I  (⊢＃ {n})        =
   subst (λ q → q ⇓⁅ 0 ⁆ᵛ v-＃ n) (sym (msubst-＃ {E})) (refl , refl)
 fundamental-lemma {E} {M = .(𝓈 M)}          I (⊢𝓈 {M} ⊢M)      =

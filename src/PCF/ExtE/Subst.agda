@@ -188,6 +188,11 @@ msubst-· : ∀ E M N
 msubst-· []            M N = refl
 msubst-· ((y , T) ∷ E) M N = msubst-· E (M [ y := T ]) (N [ y := T ])
 
+msubst-Y : ∀ E M
+         → msubst E (Y M) ＝ Y (msubst E M)
+msubst-Y []            M = refl
+msubst-Y ((x , T) ∷ E) M = msubst-Y E (M [ x := T ])
+
 msubst-＃ : ∀ {E n}
           → msubst E (＃ n) ＝ ＃ n
 msubst-＃ {E = []}    = refl
