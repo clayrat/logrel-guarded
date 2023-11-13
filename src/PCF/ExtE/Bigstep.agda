@@ -8,6 +8,7 @@ open import Data.String
 
 open import Later
 open import PCF.ExtE.TyTerm
+open import PCF.ExtE.Subst
 
 -- Step-indexed Big-Step Operational Semantics (alternative)
 

@@ -10,6 +10,7 @@ open import Structures.IdentitySystem hiding (J)
 
 open import Interlude
 open import PCF.ExtE.TyTerm
+open import PCF.ExtE.Subst
 
 infix  4  _∋_⦂_
 infix  4  _⊢_⦂_
@@ -259,3 +260,27 @@ subst-ty                          ⊢V ⊢＃                    = ⊢＃
 subst-ty                          ⊢V (⊢𝓈 ⊢N)               = ⊢𝓈 (subst-ty ⊢V ⊢N)
 subst-ty                          ⊢V (⊢𝓅 ⊢N)               = ⊢𝓅 (subst-ty ⊢V ⊢N)
 subst-ty                          ⊢V (⊢?⁰ ⊢L ⊢M ⊢N )      = ⊢?⁰ (subst-ty ⊢V ⊢L) (subst-ty ⊢V ⊢M) (subst-ty ⊢V ⊢N)
+
+-- context invariance
+
+free-in-ctx : ∀ {x M A Γ}
+            → afi x M → Γ ⊢ M ⦂ A
+            → Σ[ B ꞉ Ty ] (Γ ∋ x ⦂ B)
+free-in-ctx  afi-`      (⊢` {A} ix)     = A , ix
+free-in-ctx (afi-·-l a) (⊢L ⊢· ⊢M)     = free-in-ctx a ⊢L
+free-in-ctx (afi-·-r a) (⊢L ⊢· ⊢M)     = free-in-ctx a ⊢M
+free-in-ctx (afi-ƛ ne a) (⊢ƛ e ⊢M)       with (free-in-ctx a ⊢M)
+... | B , here ei et = absurd (ne ei)
+... | B , there _ ix = B , ix
+free-in-ctx (afi-Y a)   (⊢Y ⊢M)         = free-in-ctx a ⊢M
+free-in-ctx (afi-?-b a) (⊢?⁰ ⊢L ⊢M ⊢N) = free-in-ctx a ⊢L
+free-in-ctx (afi-?-t a) (⊢?⁰ ⊢L ⊢M ⊢N) = free-in-ctx a ⊢M
+free-in-ctx (afi-?-f a) (⊢?⁰ ⊢L ⊢M ⊢N) = free-in-ctx a ⊢N
+free-in-ctx (afi-𝓈 a)   (⊢𝓈 ⊢M)         = free-in-ctx a ⊢M
+free-in-ctx (afi-𝓅 a)   (⊢𝓅 ⊢M)        = free-in-ctx a ⊢M
+
+∅⊢-closed : ∀ {M A}
+           → ∅ ⊢ M ⦂ A
+           → closed M
+∅⊢-closed ⊢M i a with (free-in-ctx a ⊢M)
+... | (B , p) = ∅-empty p

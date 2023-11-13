@@ -9,6 +9,7 @@ open import Data.String
 open import Later
 open import Interlude
 open import PCF.ExtE.TyTerm
+open import PCF.ExtE.Subst
 
 infix  1 begin_
 infixr 2 _—→⟨_⟩_

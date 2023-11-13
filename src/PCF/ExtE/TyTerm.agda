@@ -3,7 +3,6 @@ module PCF.ExtE.TyTerm where
 open import Prelude
 open import Data.Empty
 open import Data.Unit
-open import Data.Dec renaming (rec to recᵈ)
 open import Data.Nat hiding (_·_)
 open import Data.String
 open import Structures.IdentitySystem
@@ -23,7 +22,6 @@ infixr 7 _⇒_
 infix  9 Y_
 infix  9 `_
 infix  9 ＃_
-infix  9 _[_:=_]
 
 -- types
 
@@ -202,6 +200,7 @@ instance
   decomp-hlevel-Term = decomp (quote Term-is-of-hlevel) (`level-minus 2 ∷ [])
 
 -- Values
+
 data Val : 𝒰 where
   v-＃ : ℕ → Val
   v-ƛ  : Id → Ty → Term → Val
@@ -261,36 +260,13 @@ IsVal-unique : ∀ N M V
 IsVal-unique .(＃ _)        .(＃ _)        .(v-＃ _)    is-＃ is-＃ = refl
 IsVal-unique .(ƛ _ ⦂ _ ⇒ _) .(ƛ _ ⦂ _ ⇒ _) .(v-ƛ _ _ _) is-ƛ  is-ƛ = refl
 
--- substitution
-
-_[_:=_] : Term → Id → Term → Term
-(` x)          [ y := T ] = recᵈ (λ _ → T) (λ _ → ` x) (x ≟ y)
-(ƛ x ⦂ A ⇒ S)  [ y := T ] = recᵈ (λ _ → ƛ x ⦂ A ⇒ S) (λ _ → ƛ x ⦂ A ⇒ (S [ y := T ])) (x ≟ y)
-(R · S)        [ y := T ] = R [ y := T ] · S [ y := T ]
-(Y S)          [ y := T ] = Y (S [ y := T ])
-(＃ n)         [ y := T ] = ＃ n
-𝓈 S            [ y := T ] = 𝓈 (S [ y := T ])
-𝓅 S            [ y := T ] = 𝓅 (S [ y := T ])
-(?⁰ N ↑ R ↓ S) [ y := T ] = ?⁰ N [ y := T ] ↑ R [ y := T ] ↓ S [ y := T ]
-
-{-
-data Val : Term → 𝒰 where
-  v-＃ : ∀ n
-        ----------
-       → Val (＃ n)
-
-  v-ƛ  : ∀ x t
-        ----------
-       → Val (ƛ x ⇒ t)
--}
-{-
 -- appears free in
 
 data afi : String → Term → 𝒰 where
   afi-`   : ∀ {x} → afi x (` x)
   afi-·-l : ∀ {x M N} → afi x M → afi x (M · N)
   afi-·-r : ∀ {x M N} → afi x N → afi x (M · N)
-  afi-ƛ   : ∀ {x y N} → x ≠ y → afi x N → afi x (ƛ y ⇒ N)
+  afi-ƛ   : ∀ {x y A N} → x ≠ y → afi x N → afi x (ƛ y ⦂ A ⇒ N)
   afi-Y   : ∀ {x M} → afi x M → afi x (Y M)
   -- booleans
   afi-?-b : ∀ {x L M N} → afi x L → afi x (?⁰ L ↑ M ↓ N)
@@ -302,4 +278,3 @@ data afi : String → Term → 𝒰 where
 
 closed : Term → 𝒰
 closed t = ∀ i → ¬ afi i t
--}

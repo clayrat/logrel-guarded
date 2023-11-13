@@ -12,6 +12,7 @@ open import Later
 open import Interlude
 open import Guarded.Partial
 open import PCF.ExtE.TyTerm
+open import PCF.ExtE.Subst
 open import PCF.ExtE.TyDeriv
 open import PCF.ExtE.Bigstep
 open import PCF.ExtE.Smallstep
@@ -247,7 +248,7 @@ rtc-sound {T} {M} {k = zero}  (P , sP , eP)          ⊢M ⊢N =
     (λ sQ → rtc0-sound sQ ⊢M ⊢N)
     (sym eP) sP
 rtc-sound         {k = suc k} (P , R , sP , sR , S▹) ⊢M ⊢N =
-  let ⊢P = rtc-preserve sP ⊢M
+  let ⊢P = rtc0-preserve sP ⊢M
       ⊢R = preserve sR ⊢P
     in
     rtc0-sound sP ⊢M ⊢P

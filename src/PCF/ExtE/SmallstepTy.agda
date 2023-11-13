@@ -30,10 +30,11 @@ preserve (ξ-𝓈 s) (⊢𝓈 ⊢M)         = ⊢𝓈 (preserve s ⊢M)
 preserve (ξ-𝓅 s) (⊢𝓅 ⊢M)         = ⊢𝓅 (preserve s ⊢M)
 preserve (ξ-? s) (⊢?⁰ ⊢L ⊢M ⊢N) = ⊢?⁰ (preserve s ⊢L) ⊢M ⊢N
 
-rtc-preserve : ∀ {M N A}
+rtc0-preserve : ∀ {M N A}
           → M —↠⁰ N
           → ∅ ⊢ M ⦂ A
             ----------
           → ∅ ⊢ N ⦂ A
-rtc-preserve {M} {.M} (.M ∎ᵣ)         ⊢M = ⊢M
-rtc-preserve {M} {N}  (.M —→⟨ S ⟩ MS) ⊢M = rtc-preserve MS (preserve S ⊢M)
+rtc0-preserve {M} {.M} (.M ∎ᵣ)         ⊢M = ⊢M
+rtc0-preserve {M} {N}  (.M —→⟨ S ⟩ MS) ⊢M = rtc0-preserve MS (preserve S ⊢M)
+
