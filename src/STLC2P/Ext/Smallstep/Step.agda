@@ -192,7 +192,7 @@ value-nf {.(〈 L ⹁ M 〉)} (V-〈〉 {L} {M} VL VM) (.(〈 L ⹁ M′ 〉) , 
 -- context invariance
 
 -- appears free in
-data afi : String → Term → 𝒰 where
+data afi : Id → Term → 𝒰 where
   afi-var   : ∀ {x} → afi x (` x)
   afi-appl  : ∀ {x M N} → afi x M → afi x (M · N)
   afi-appr  : ∀ {x M N} → afi x N → afi x (M · N)

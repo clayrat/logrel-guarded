@@ -4,7 +4,7 @@ open import Prelude
 open import Correspondences.Base using (Corr¹ ; Corr²)
 open import Data.Empty
 open import Data.Bool
-open import Data.Dec
+open import Data.Dec renaming (rec to recᵈ)
 open import Data.Maybe
 open import Data.List
 open import Data.String
@@ -32,16 +32,12 @@ extract d = Data.Maybe.rec d id
 
 lup : String → List (String × A) → Maybe A
 lup k []            = nothing
-lup k ((j , x) ∷ l) with k ≟ j
-... | yes _ = just x
-... | no _ = lup k l
+lup k ((j , x) ∷ l) = recᵈ (λ _ → just x) (λ _ → lup k l) (k ≟ j)
 
 -- TODO formulate with filter
 drp : String → List (String × A) → List (String × A)
 drp n []              = []
-drp n ((m , x) ∷ nxs) with n ≟ m
-... | yes _ = drp n nxs
-... | no  _ = ((m , x)) ∷ drp n nxs
+drp n ((m , x) ∷ nxs) = recᵈ (λ _ → drp n nxs) (λ _ → ((m , x)) ∷ drp n nxs) (n ≟ m)
 
 -- bi-implication
 
@@ -63,4 +59,4 @@ normal-form : ℛ A → A → 𝒰 (level-of-type A)
 normal-form {A} R x = ¬ Σ[ x′ ꞉ A ] (R x x′)
 
 deterministic : ℛ A → 𝒰 (level-of-type A)
-deterministic {A} R =  ∀ (x y1 y2 : A) → R x y1 → R x y2 → y1 ＝ y2
+deterministic {A} R = ∀ (x y1 y2 : A) → R x y1 → R x y2 → y1 ＝ y2

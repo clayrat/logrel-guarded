@@ -188,6 +188,7 @@ subst-not-afi (ƛ y ⇒ t)  x v cv (afi-abs x≠y a) | no _    =
   subst-not-afi t x v cv a
 subst-not-afi (t₁ · t₂)  x v cv (afi-appl a) = subst-not-afi t₁ x v cv a
 subst-not-afi (t₁ · t₂)  x v cv (afi-appr a) = subst-not-afi t₂ x v cv a
+
 duplicate-subst : ∀ t x v w
                 → closed v
                 → t [ x := v ] [ x := w ] ＝ t [ x := v ]

@@ -191,7 +191,7 @@ msubst-R     {e}                           ⊢𝒻                        i =
   , (subst halts mf $ value-halts V-𝒻)
 msubst-R {c} {e} {.(⁇ L ↑ M ↓ N)}   {T}       (⊢⁇ {L} {M} {N} ⊢L ⊢M ⊢N) i with msubst-R ⊢L i
 ... | ⊢mL , .(ƛ _ ⇒ _)  , S , V-ƛ      = absurd (¬ƛ⦂𝟚 $ multi-preserve ⊢mL S)
-... | ⊢mL , .𝓉                , S , V-𝓉      =
+... | ⊢mL , .𝓉          , S , V-𝓉      =
   subst (R T) (sym $ msubst-if e L M N) $
   multistep-preserves-R'
     (⊢⁇ ⊢mL (msubst-preserves-typing i ⊢M) (msubst-preserves-typing i ⊢N))
