@@ -143,8 +143,8 @@ closed-env : (@0 e : Env) → 𝒰
 closed-env = All (closed ∘ snd)
 
 msubst : Env → Term → Term
-msubst []             t = t
-msubst ((x , s) ∷ ss) t = msubst ss (t [ x := s ])
+msubst []            T = T
+msubst ((x , S) ∷ E) T = msubst E (T [ x := S ])
 
 -- lemmas
 
@@ -155,22 +155,30 @@ msubst-closed c []            = refl
 msubst-closed c ((y , N) ∷ E) =
   ap (msubst E) (subst-closed c y N) ∙ msubst-closed c E
 
-subst-msubst : ∀ {env v}
-             → closed v → closed-env env
-             → ∀ x t
-             → msubst env (t [ x := v ]) ＝ (msubst (drp x env) t) [ x := v ]
-subst-msubst {env = []}        {v} cv []        x t = refl
-subst-msubst {((y , p) ∷ env)} {v} cv (cp ∷ ce) x t with x ≟ y
-... | yes prf = ap (msubst env) (ap (λ q → t [ x := v ] [ q := p ]) (sym prf)
-                                 ∙ duplicate-subst t x v p cv)
-              ∙ subst-msubst cv ce x t
-... | no ctra = ap (msubst env) (swap-subst t x y v p ctra cv cp)
-              ∙ subst-msubst cv ce x (t [ y := p ])
+{-
+msubst-closed-env : ∀ {E M}
+              → closed-env E
+              → closed (msubst E M)
+msubst-closed-env {E = []}          = {!!}
+msubst-closed-env {E = (y , N) ∷ E} = {!!}
+-}
+
+subst-msubst : ∀ {E V}
+             → closed V → closed-env E
+             → ∀ x T
+             → msubst E (T [ x := V ]) ＝ (msubst (drp x E) T) [ x := V ]
+subst-msubst {E = []}            cV []        x T = refl
+subst-msubst {((y , P) ∷ E)} {V} cV (cp ∷ ce) x T with x ≟ y
+... | yes prf = ap (msubst E) (ap (λ q → T [ x := V ] [ q := P ]) (sym prf)
+                               ∙ duplicate-subst T x V P cV)
+              ∙ subst-msubst cV ce x T
+... | no ctra = ap (msubst E) (swap-subst T x y V P ctra cV cp)
+              ∙ subst-msubst cV ce x (T [ y := P ])
 
 msubst-` : ∀ {E}
-           → closed-env E
-           → ∀ x
-           → msubst E (` x) ＝ extract (` x) (lup x E)
+         → closed-env E
+         → ∀ x
+         → msubst E (` x) ＝ extract (` x) (lup x E)
 msubst-` {E = []}        []        x = refl
 msubst-` {((y , t) ∷ E)} (ct ∷ cE) x with x ≟ y
 ... | yes prf = msubst-closed ct E
@@ -207,3 +215,8 @@ msubst-𝓅 : ∀ {E M}
           → msubst E (𝓅 M) ＝ 𝓅 (msubst E M)
 msubst-𝓅 {E = []}              = refl
 msubst-𝓅 {E = (x , N) ∷ E} {M} = msubst-𝓅 {E} {M = M [ x := N ]}
+
+msubst-? : ∀ E L M N
+         → msubst E (?⁰ L ↑ M ↓ N) ＝ ?⁰ (msubst E L) ↑ (msubst E M) ↓ (msubst E N)
+msubst-? []            L M N = refl
+msubst-? ((x , T) ∷ E) L M N = msubst-? E (L [ x := T ]) (M [ x := T ]) (N [ x := T ])

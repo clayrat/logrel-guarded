@@ -3,7 +3,7 @@ module PCF.ExtE.Adequacy where
 
 open import Prelude hiding (_⊆_)
 open import Data.Empty
-open import Data.Dec
+open import Data.Dec renaming (rec to recᵈ)
 open import Data.Nat hiding (_·_)
 open import Data.Maybe
 open import Data.List
@@ -63,15 +63,26 @@ ap-𝓡 {L} {r▹} ⊢L Rf Rr =
 
 -- 2.26
 
-lift-𝓡𝓝 : ∀ {M N T}
+lift-𝓡𝓝0 : ∀ {M N T}
           → (σ▹ : ▹ 𝒯⟦ T ⟧)
           → M —→⁅ s¹ ⁆ N
           → ▸ (▹map (𝓡 T) σ▹ ⊛ next N)
           → 𝓡 T (θ σ▹) M
-lift-𝓡𝓝 {M} {N} {T = S ⇒ T} σ▹ S1 R▹ β P ⊢P RP =
-  lift-𝓡𝓝 (σ▹ ⊛ next β) (ξ-· S1) $
+lift-𝓡𝓝0 {M} {N} {T = S ⇒ T} σ▹ S1 R▹ β P ⊢P RP =
+  lift-𝓡𝓝0 (σ▹ ⊛ next β) (ξ-· S1) $
   ap-𝓡 {T = T} ⊢P R▹ (next RP)
-lift-𝓡𝓝 {M} {N} {T = 𝓝}    σ▹ S1 R▹            =
+lift-𝓡𝓝0 {M} {N} {T = 𝓝}    σ▹ S1 R▹            =
+  𝓡𝓝-⇉later M N (M ∎ᵣ) S1 R▹
+
+lift-𝓡𝓝 : ∀ {M N T}
+          → (σ : 𝒯⟦ T ⟧)
+          → M —→⁅ s¹ ⁆ N
+          → ▹ 𝓡 T σ N
+          → 𝓡 T (δ σ) M
+lift-𝓡𝓝         {T = S ⇒ T} σ S1 R▹ β P ⊢P RP =
+  lift-𝓡𝓝 (σ β) (ξ-· S1) $
+  ap-𝓡 {T = T} ⊢P R▹ (next RP)
+lift-𝓡𝓝 {M} {N} {T = 𝓝}    σ S1 R▹            =
   𝓡𝓝-⇉later M N (M ∎ᵣ) S1 R▹
 
 -- 2.27.1
@@ -87,6 +98,13 @@ step-𝓡 {M}     {T = 𝓝}    {τ = later r▹} st R         =
   𝓡𝓝-⇉later M′ M″ (M —→⟨ st ⟩ S1) S2 S▹
 step-𝓡 {M} {N} {T = S ⇒ T} {τ = ϕ}        st Rf σ P cP RP =
   step-𝓡 {M = M · P} {N = N · P} {T} {τ = ϕ σ} (ξ-· st) (Rf σ P cP RP)
+
+rtc-𝓡 : ∀ {M N T τ}
+        → M —↠⁰ N
+        → 𝓡 T τ N
+        → 𝓡 T τ M
+rtc-𝓡 {M} {.M}     (.M ∎ᵣ)         R = R
+rtc-𝓡 {M} {N}  {T} (.M —→⟨ S ⟩ MS) R = step-𝓡 {T = T} S (rtc-𝓡 {T = T} MS R)
 
 -- 2.27.2
 
@@ -106,6 +124,13 @@ step-𝓡-rev {M} {N} {T = 𝓝}    {τ = later r▹} st R         with 𝓡𝓝
                     (subst (λ q → q —↠⁰ M′) (snd (step-det M s⁰ _ s⁰ N S1 st)) S1′) S2 S▹
 step-𝓡-rev {M} {N} {T = S ⇒ T} {τ = ϕ}        st Rf σ P cP RP =
   step-𝓡-rev {M = M · P} {N = N · P} {T} {τ = ϕ σ} (ξ-· st) (Rf σ P cP RP)
+
+rtc-𝓡-rev : ∀ {M N T τ}
+           → M —↠⁰ N
+           → 𝓡 T τ M
+           → 𝓡 T τ N
+rtc-𝓡-rev {M} {.M}     (.M ∎ᵣ)         R = R
+rtc-𝓡-rev {M} {N}  {T} (.M —→⟨ S ⟩ MS) R = rtc-𝓡-rev {T = T} MS (step-𝓡-rev {T = T} S R)
 
 -- 2.28
 
@@ -168,7 +193,7 @@ Inst-R     (I-cons {x = y}         τ c R I) (there {x} ne ix) with (x ≟ y)
 ... | yes prf = absurd (ne prf)
 ... | no ctra = Inst-R I ix
 
--- 𝓡𝓝 lemmas
+-- 𝓡/𝓝 lemmas
 
 𝓡𝓝𝓈 : (T : Part ℕ) → (M : Term) → 𝓡𝓝 T M → 𝓡𝓝 (mapᵖ suc T) (𝓈 M)
 𝓡𝓝𝓈 = fix λ ih▹ → λ where
@@ -216,14 +241,15 @@ fundamental-lemma {E} {M = .(L · M)} {T}  I (_⊢·_ {L} {M} ⊢L ⊢M)     =
         (Inst-closed-msubst I ⊢M) $
   fundamental-lemma I ⊢M
 fundamental-lemma {E} {M = .(Y M)} {T}         I (⊢Y {M} ⊢M)         =
+  let τ = ℰ⟦ ⊢Y ⊢M ⟧ (Inst-𝒞 I) in
   fix λ ih▹ →
-    subst (λ q → 𝓡 T (fix (θ ∘ ▹map (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I)))) q) (sym $ msubst-Y E M) $
+    subst (𝓡 T τ) (sym $ msubst-Y E M) $
     subst (λ q → 𝓡 T q (Y (msubst E M))) (sym $ happly (Y-δ ⊢M) (Inst-𝒞 I)) $
-    lift-𝓡𝓝 (next (ℰ⟦ ⊢M ⊢· ⊢Y ⊢M ⟧ (Inst-𝒞 I))) Ｙ $
-    subst (λ q → ▹ 𝓡 T (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I) (fix (θ ∘ ▹map (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I))))) (msubst E M · q)) (msubst-Y E M) $
-    ▹map (fundamental-lemma I ⊢M (fix (θ ∘ ▹map (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I))))
-                                         (msubst E (Y M))
-                                         (Inst-closed-msubst I (⊢Y ⊢M))) ih▹
+    lift-𝓡𝓝 (ℰ⟦ ⊢M ⊢· ⊢Y ⊢M ⟧ (Inst-𝒞 I)) Ｙ $
+    subst (λ q → ▹ 𝓡 T (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I) τ) (msubst E M · q)) (msubst-Y E M) $
+    ▹map (fundamental-lemma I ⊢M τ (msubst E (Y M))
+                                    (Inst-closed-msubst I (⊢Y ⊢M)))
+          ih▹
 fundamental-lemma {E} {M = .(＃ n)}         I  (⊢＃ {n})        =
   subst (λ q → q ⇓⁅ 0 ⁆ᵛ v-＃ n) (sym (msubst-＃ {E})) (refl , refl)
 fundamental-lemma {E} {M = .(𝓈 M)}          I (⊢𝓈 {M} ⊢M)      =
@@ -234,8 +260,76 @@ fundamental-lemma {E} {M = .(𝓅 M)}          I (⊢𝓅 {M} ⊢M)     =
   subst (𝓡𝓝 (mapᵖ pred (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I)))) (sym (msubst-𝓅 {E})) $
   𝓡𝓝𝓅 (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I)) (msubst E M) $
   fundamental-lemma I ⊢M
-fundamental-lemma     {M = .(?⁰ _ ↑ _ ↓ _)} I (⊢?⁰ ⊢L ⊢M ⊢N) =
-  {!!}
+fundamental-lemma {E} {M = .(?⁰ L ↑ M ↓ N)} {T} I (⊢?⁰ {L} {M} {N} ⊢L ⊢M ⊢N) =
+  subst (𝓡 T (𝒯𝓝T (ℰ⟦ ⊢L ⟧ (Inst-𝒞 I))))
+        (sym (msubst-? E L M N)) $
+  subst (λ q → 𝓡 T (𝒯𝓝T (ℰ⟦ ⊢L ⟧ (Inst-𝒞 I))) (?⁰ msubst E L ↑ msubst E M ↓ q))
+        (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢N)) "x" (msubst E L)) $
+  subst (λ q → 𝓡 T (𝒯𝓝T (ℰ⟦ ⊢L ⟧ (Inst-𝒞 I))) (?⁰ msubst E L ↑ q ↓ msubst E N [ "x" := msubst E L ]))
+        (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢M)) "x" (msubst E L)) $
+  step-𝓡-rev {T = T} β-ƛ $
+  fix (go "x") (ℰ⟦ ⊢L ⟧ (Inst-𝒞 I)) (msubst E L) (Inst-closed-msubst I ⊢L) (fundamental-lemma I ⊢L)
+  where
+  ℕT : ℕ → 𝒯⟦ T ⟧
+  ℕT = ifz (ℰ⟦ ⊢M ⟧ (Inst-𝒞 I)) (ℰ⟦ ⊢N ⟧ (Inst-𝒞 I))
+  𝒯𝓝T : 𝒯⟦ 𝓝 ⇒ T ⟧
+  𝒯𝓝T = ℕT ^
+  go : (x : Id)
+     → ▹ 𝓡 (𝓝 ⇒ T) 𝒯𝓝T (ƛ x ⦂ 𝓝 ⇒ ?⁰ ` x ↑ msubst E M ↓ msubst E N)
+     → 𝓡 (𝓝 ⇒ T) 𝒯𝓝T (ƛ x ⦂ 𝓝 ⇒ ?⁰ ` x ↑ msubst E M ↓ msubst E N)
+  go x ih▹ (now zero)    P ⊢P RP with (big→small-rtc-v P (＃ 0) (v-＃ 0) is-＃ RP)
+  ... | V , S , e = rtc-𝓡 {T = T}
+                          ((ƛ x ⦂ 𝓝 ⇒ (?⁰ ` x ↑ msubst E M ↓ msubst E N)) · P
+                             —→⟨ β-ƛ ⟩
+                           help1)
+                          (fundamental-lemma I ⊢M)
+    where
+    help1 : (?⁰ ` x ↑ msubst E M ↓ msubst E N) [ x := P ] —↠⁰ msubst E M
+    help1 with (x ≟ x)
+    ... | yes prf = (subst (λ q → ?⁰ P ↑ q ↓ msubst E N [ x := P ] —↠⁰ ?⁰ P ↑ msubst E M ↓ msubst E N)
+                           (sym (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢M)) x P))
+                           (subst
+                             (λ q → ?⁰ P ↑ msubst E M ↓ q —↠⁰ ?⁰ P ↑ msubst E M ↓ msubst E N)
+                             (sym ((subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢N)) x P)))
+                             (?⁰ P ↑ msubst E M ↓ msubst E N ∎ᵣ)) —↠⁰∘ (—↠⁰-? (subst (P —↠⁰_) e S))) —↠⁰+ β-?⁰
+    ... | no ctra = absurd (ctra refl)
+  go x ih▹ (now (suc n)) P ⊢P RP with (big→small-rtc-v P (＃ (suc n)) (v-＃ (suc n)) is-＃ RP)
+  ... | V , S , e = rtc-𝓡 {T = T} (((ƛ x ⦂ 𝓝 ⇒ (?⁰ ` x ↑ msubst E M ↓ msubst E N)) · P
+                                     —→⟨ β-ƛ ⟩
+                                   help2))
+                          (fundamental-lemma I ⊢N)
+    where
+    help2 : (?⁰ ` x ↑ msubst E M ↓ msubst E N) [ x := P ] —↠⁰ msubst E N
+    help2 with (x ≟ x)
+    ... | yes prf = (subst (λ q → ?⁰ P ↑ q ↓ msubst E N [ x := P ] —↠⁰ ?⁰ P ↑ msubst E M ↓ msubst E N)
+                           (sym (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢M)) x P))
+                           (subst
+                             (λ q → ?⁰ P ↑ msubst E M ↓ q —↠⁰ ?⁰ P ↑ msubst E M ↓ msubst E N)
+                             (sym ((subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢N)) x P)))
+                             (?⁰ P ↑ msubst E M ↓ msubst E N ∎ᵣ)) —↠⁰∘ (—↠⁰-? (subst (P —↠⁰_) e S))) —↠⁰+ β-?ˢ
+    ... | no ctra = absurd (ctra refl)
+  go x ih▹ (later r▹)    P ⊢P RP with (𝓡𝓝-later⇉ RP)
+  ... | L′ , L″ , S1 , S2 , R▹ =
+    step-𝓡 {T = T} (β-ƛ {x = x} {M = ?⁰ ` x ↑ msubst E M ↓ msubst E N} {N = P} {A = 𝓝}) $
+    help $ λ α → step-𝓡-rev {T = T} (β-ƛ {x = x} {M = ?⁰ ` x ↑ msubst E M ↓ msubst E N} {N = L″} {A = 𝓝}) $
+           ih▹ α (r▹ α) L″ (preserve S2 (rtc0-preserve S1 ⊢P)) (R▹ α)
+    where
+    help : ▸ (▹map (𝓡 T ∘ 𝒯𝓝T) r▹ ⊛ next (?⁰ recᵈ (λ _ → L″) (λ _ → ` x) (x ≟ x) ↑ msubst E M [ x := L″ ] ↓ msubst E N [ x := L″ ]))
+         → 𝓡 T (θ (dfix (^-body ℕT) ⊛ r▹)) (?⁰ recᵈ (λ _ → P) (λ _ → ` x) (x ≟ x) ↑ msubst E M [ x := P ] ↓ msubst E N [ x := P ])
+    help h▹ with (x ≟ x)
+    ... | yes prf =
+            subst (λ q → 𝓡 T (θ (dfix (^-body ℕT) ⊛ r▹)) (?⁰ P ↑ q ↓ msubst E N [ x := P ]))
+                  (sym (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢M)) x P)) $
+            subst (λ q → 𝓡 T (θ (dfix (^-body ℕT) ⊛ r▹)) (?⁰ P ↑ msubst E M ↓ q))
+                  (sym (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢N)) x P)) $
+            rtc-𝓡 {T = T} (—↠⁰-? S1) $
+            subst (λ q → 𝓡 T (θ (q ⊛ r▹)) (?⁰ L′ ↑ msubst E M ↓ msubst E N)) (sym $ pfix (^-body ℕT)) $
+            subst (λ q → 𝓡 T (θ (▹map 𝒯𝓝T r▹)) (?⁰ L′ ↑ q ↓ msubst E N))
+                  (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢M)) x L″) $
+            subst (λ q → 𝓡 T (θ (▹map 𝒯𝓝T r▹)) (?⁰ L′ ↑ msubst E M [ x := L″ ] ↓ q))
+                  (subst-closed (∅⊢-closed (Inst-closed-msubst I ⊢N)) x L″) $
+            lift-𝓡𝓝0 {T = T} (▹map 𝒯𝓝T r▹) (ξ-? S2) h▹
+    ... | no ctra = absurd (ctra refl)
 
 -- 2.28
 
