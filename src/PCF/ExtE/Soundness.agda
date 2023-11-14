@@ -16,7 +16,6 @@ open import PCF.ExtE.Subst
 open import PCF.ExtE.TyDeriv
 open import PCF.ExtE.Bigstep
 open import PCF.ExtE.Smallstep
-open import PCF.ExtE.SmallstepTy
 open import PCF.ExtE.Correspondence
 open import PCF.ExtE.Denot
 

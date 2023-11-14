@@ -3,6 +3,7 @@ module PCF.ExtE.Smallstep where
 
 open import Prelude
 open import Data.Empty
+open import Data.Dec
 open import Data.Nat hiding (_·_)
 open import Data.String
 
@@ -10,6 +11,7 @@ open import Later
 open import Interlude
 open import PCF.ExtE.TyTerm
 open import PCF.ExtE.Subst
+open import PCF.ExtE.TyDeriv
 
 infix  1 begin_
 infixr 2 _—→⟨_⟩_
@@ -167,6 +169,33 @@ LM —↠⁰+ MN = LM —↠⁰∘ (^—↠⁰ MN)
 —↠⁰-? {L} {.L} {M} {N} (.L ∎ᵣ)         = ?⁰ L ↑ M ↓ N ∎ᵣ
 —↠⁰-? {L} {L′} {M} {N} (.L —→⟨ S ⟩ MS) = ?⁰ L ↑ M ↓ N —→⟨ ξ-? S ⟩ —↠⁰-? MS
 
+-- preservation
+
+preserve : ∀ {M N A k}
+          → M —→⁅ k ⁆ N
+          → ∅ ⊢ M ⦂ A
+            ----------
+          → ∅ ⊢ N ⦂ A
+preserve  β-ƛ    (⊢ƛ e ⊢M ⊢· ⊢N) = subst-ty ⊢N ⊢M
+preserve  Ｙ     (⊢Y ⊢M)          = ⊢M ⊢· ⊢Y ⊢M
+preserve  β-𝓈    (⊢𝓈 ⊢＃)         = ⊢＃
+preserve  β-𝓅⁰   (⊢𝓅 ⊢＃)         = ⊢＃
+preserve  β-𝓅ˢ   (⊢𝓅 ⊢＃)         = ⊢＃
+preserve  β-?⁰   (⊢?⁰ ⊢＃ ⊢M ⊢N) = ⊢M
+preserve  β-?ˢ   (⊢?⁰ ⊢＃ ⊢M ⊢N) = ⊢N
+preserve (ξ-· s) (⊢M ⊢· ⊢N)     = preserve s ⊢M ⊢· ⊢N
+preserve (ξ-𝓈 s) (⊢𝓈 ⊢M)         = ⊢𝓈 (preserve s ⊢M)
+preserve (ξ-𝓅 s) (⊢𝓅 ⊢M)         = ⊢𝓅 (preserve s ⊢M)
+preserve (ξ-? s) (⊢?⁰ ⊢L ⊢M ⊢N) = ⊢?⁰ (preserve s ⊢L) ⊢M ⊢N
+
+rtc0-preserve : ∀ {M N A}
+          → M —↠⁰ N
+          → ∅ ⊢ M ⦂ A
+            ----------
+          → ∅ ⊢ N ⦂ A
+rtc0-preserve {M} {.M} (.M ∎ᵣ)         ⊢M = ⊢M
+rtc0-preserve {M} {N}  (.M —→⟨ S ⟩ MS) ⊢M = rtc0-preserve MS (preserve S ⊢M)
+
 -- step RTC over arbitrary steps w/ predicate
 _=⇒⁅_⁆_ : Term → ℕ → (Term → 𝒰) → 𝒰
 M =⇒⁅ 0     ⁆ Q = Σ[ N ꞉ Term ] (M —↠⁰ N) × (Q N)
@@ -181,3 +210,4 @@ M =⇒⁅ suc k ⁆ Q = Σ[ M′ ꞉ Term ] (Σ[ M″ ꞉ Term ] (M —↠⁰ M�
 -- step RTC over arbitrary steps
 _=⇒⁅_⁆ᵗ_ : Term → ℕ → Term → 𝒰
 M =⇒⁅ k ⁆ᵗ N = M =⇒⁅ k ⁆ (_＝ N)
+
