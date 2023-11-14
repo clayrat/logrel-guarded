@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module PCF.ExtE.Soundness where
+module PCF.Ext.UnsafeY.Soundness where
 
 open import Prelude hiding (_⊆_)
 open import Data.Empty
@@ -11,13 +11,13 @@ open import Data.String
 open import Later
 open import Interlude
 open import Guarded.Partial
-open import PCF.ExtE.TyTerm
-open import PCF.ExtE.Subst
-open import PCF.ExtE.TyDeriv
-open import PCF.ExtE.Bigstep
-open import PCF.ExtE.Smallstep
-open import PCF.ExtE.Correspondence
-open import PCF.ExtE.Denot
+open import PCF.Ext.TyTerm
+open import PCF.Ext.Subst
+open import PCF.Ext.TyDeriv
+open import PCF.Ext.UnsafeY.Bigstep
+open import PCF.Ext.UnsafeY.Smallstep
+open import PCF.Ext.UnsafeY.Correspondence
+open import PCF.Ext.UnsafeY.Denot
 
 -- Soundness
 

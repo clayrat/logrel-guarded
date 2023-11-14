@@ -1,4 +1,4 @@
-module PCF.ExtE.TyTerm where
+module PCF.Ext.TyTerm where
 
 open import Prelude
 open import Data.Empty

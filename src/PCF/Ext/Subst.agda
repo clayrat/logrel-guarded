@@ -1,4 +1,4 @@
-module PCF.ExtE.Subst where
+module PCF.Ext.Subst where
 
 open import Prelude
 open import Data.Empty
@@ -10,7 +10,7 @@ open import Data.List
 open import Data.List.Correspondences.Unary.All
 
 open import Interlude
-open import PCF.ExtE.TyTerm
+open import PCF.Ext.TyTerm
 
 infix 9 _[_:=_]
 

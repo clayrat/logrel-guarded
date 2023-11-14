@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module PCF.Ext.Correspondence where
+module PCF.Ext.UnsafeY.Correspondence where
 
 open import Prelude
 open import Data.Empty
@@ -9,10 +9,10 @@ open import Data.Sum
 
 open import Later
 open import Interlude
-open import PCF.Ext.Term
+open import PCF.Ext.TyTerm
 open import PCF.Ext.Subst
-open import PCF.Ext.Bigstep
-open import PCF.Ext.Smallstep
+open import PCF.Ext.UnsafeY.Bigstep
+open import PCF.Ext.UnsafeY.Smallstep
 
 -- 2.5.1
 
@@ -20,7 +20,7 @@ small⁰-big : {k : ℕ} (M N : Term) (Q : Val → ℕ → 𝒰)
            → M —→⁅ s⁰ ⁆ N
            → N ⇓⁅ k ⁆ Q
            → M ⇓⁅ k ⁆ Q
-small⁰-big .((ƛ x ⇒ M) · N)       .(M [ x := N ])  Q (β-ƛ {x} {M} {N})        N⇓ =
+small⁰-big .((ƛ x ⦂ A ⇒ M) · N)   .(M [ x := N ])  Q (β-ƛ {x} {M} {N} {A})     N⇓ =
   N⇓
 small⁰-big .(𝓈 (＃ n))            .(＃ (suc n))    Q (β-𝓈 {n})                N⇓ =
   n , refl , N⇓
@@ -75,7 +75,7 @@ small-rtc-big-v : {k : ℕ} (M N : Term) (V : Val)
 small-rtc-big-v M N V = small-rtc-big M N (λ v l → (l ＝ 0) × (v ＝ V))
 
 -- 2.7
-
+-- we define it as a typelevel function by induction on k to work around size issues
 _⇛⁅_⁆_ : Term → ℕ → (Term → ℕ → 𝒰) → 𝒰
 M ⇛⁅ zero ⁆  Q =  Σ[ N ꞉ Term ] (M —↠⁰ N) × Q N 0
 M ⇛⁅ suc k ⁆ Q = (Σ[ N ꞉ Term ] (M —↠⁰ N) × Q N (suc k))
@@ -96,7 +96,7 @@ M ⇛⁅ suc k ⁆ Q = (Σ[ N ꞉ Term ] (M —↠⁰ N) × Q N (suc k))
    → M ⇛⁅ suc k ⁆ Q
 ⇛ˢ {M′} {M″} MM′ MM″ MQ▹ = inr (M′ , M″ , MM′ , MM″ , MQ▹)
 
--- TODO define ⇛-elim to reduce duplication
+-- TODO define ⇛-elim to remove duplication for the k case
 
 -- 2.8
 
@@ -195,7 +195,7 @@ mutual
   Q·-covariant : (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
                → (s : Term) → (v : Val) → (n : ℕ)
                → Q· s Q v n → Q· s R v n
-  Q·-covariant Q R qr s (v-ƛ x t) n qq =
+  Q·-covariant Q R qr s (v-ƛ x A t) n qq =
     ⇓-covariant Q R qr (t [ x := s ]) n qq
 
   Q?-covariant : (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
@@ -209,8 +209,8 @@ mutual
   ⇓-covariant : (Q R : Val → ℕ → 𝒰) → (∀ v n → Q v n → R v n)
               → (M : Term) → (k : ℕ)
               → M ⇓⁅ k ⁆ Q → M ⇓⁅ k ⁆ R
-  ⇓-covariant Q R qr (ƛ x ⇒ t)       k      M⇓ =
-    qr (v-ƛ x t) k M⇓
+  ⇓-covariant Q R qr (ƛ x ⦂ A ⇒ t)       k      M⇓ =
+    qr (v-ƛ x A t) k M⇓
   ⇓-covariant Q R qr (r · s)         k      M⇓ =
     ⇓-covariant (Q· s Q) (Q· s R) (Q·-covariant Q R qr s) r k M⇓
   ⇓-covariant Q R qr (Y t)          (suc k) M⇓ =
@@ -244,7 +244,7 @@ Qᵀ⁰ Q N = Σ[ v ꞉ Val ] IsVal N v × Q v
 Qᵀ-impl : (Q : Val → ℕ → 𝒰)
         → (N : Term) → (k : ℕ)
         → Qᵀ Q N k → N ⇓⁅ k ⁆ Q
-Qᵀ-impl Q (ƛ x ⇒ t) k (.(v-ƛ x t) , is-ƛ , q) = q
+Qᵀ-impl Q (ƛ x ⦂ A ⇒ t) k (.(v-ƛ x A t) , is-ƛ , q) = q
 Qᵀ-impl Q (＃ n)    k (.(v-＃ n)  , is-＃ , q) = q
 
 -- TODO looks like Q₂ and Q₃ can be merged in all cases
@@ -253,8 +253,8 @@ Qᵀ-impl Q (＃ n)    k (.(v-＃ n)  , is-＃ , q) = q
 big→inter : {k : ℕ} (M : Term) (Q : Val → ℕ → 𝒰)
           → M ⇓⁅ k ⁆ Q
           → M ⇛⁅ k ⁆ (Qᵀ Q)
-big→inter     (ƛ x ⇒ t)      Q M⇓ =
-  ⇛ᵏ (ƛ x ⇒ t ∎ᵣ) (v-ƛ x t , is-ƛ , M⇓)
+big→inter     (ƛ x ⦂ A ⇒ t)      Q M⇓ =
+  ⇛ᵏ (ƛ x ⦂ A ⇒ t ∎ᵣ) (v-ƛ x A t , is-ƛ , M⇓)
 big→inter {k} (r · s)        Q M⇓ =
   let h1 = ⇓-covariant (Q· s Q) Q₂ Q·₂-impl r k M⇓
       h2 = ⇓-covariant Q₂ Q₃ Q₂₃-impl r k h1
@@ -267,24 +267,24 @@ big→inter {k} (r · s)        Q M⇓ =
   where
   Q₂ : Val → ℕ → 𝒰
   Q₂ (v-＃ x)  m = ⊥
-  Q₂ (v-ƛ x t) m = (t [ x := s ]) ⇛⁅ m ⁆ Qᵀ Q
+  Q₂ (v-ƛ x A t) m = (t [ x := s ]) ⇛⁅ m ⁆ Qᵀ Q
 
   Q·₂-impl : ∀ v n → Q· s Q v n → Q₂ v n
-  Q·₂-impl (v-ƛ x t) n qq = big→inter (t [ x := s ]) Q qq
+  Q·₂-impl (v-ƛ x A t) n qq = big→inter (t [ x := s ]) Q qq
 
   Q₃ : Val → ℕ → 𝒰
   Q₃ (v-＃ x)  m = ⊥
-  Q₃ (v-ƛ x t) m = ((ƛ x ⇒ t) · s) ⇛⁅ m ⁆ Qᵀ Q
+  Q₃ (v-ƛ x A t) m = ((ƛ x ⦂ A ⇒ t) · s) ⇛⁅ m ⁆ Qᵀ Q
 
   Q₂₃-impl : ∀ v n → Q₂ v n → Q₃ v n
-  Q₂₃-impl (v-ƛ x t) n qq =
-    small-rtc-inter ((ƛ x ⇒ t) · s) (t [ x := s ]) (Qᵀ Q) (^—↠⁰ β-ƛ) qq
+  Q₂₃-impl (v-ƛ x A t) n qq =
+    small-rtc-inter ((ƛ x ⦂ A ⇒ t) · s) (t [ x := s ]) (Qᵀ Q) (^—↠⁰ β-ƛ) qq
 
   Q₄ : Term → ℕ → 𝒰
   Q₄ (` x) m = ⊥
-  Q₄ (ƛ x ⇒ t) m = ⊥
+  Q₄ (ƛ x ⦂ A ⇒ t) m = ⊥
   Q₄ (` x · s) m = ⊥
-  Q₄ ((ƛ x ⇒ r) · s) m = ((ƛ x ⇒ r) · s) ⇛⁅ m ⁆ Qᵀ Q
+  Q₄ ((ƛ x ⦂ A ⇒ r) · s) m = ((ƛ x ⦂ A ⇒ r) · s) ⇛⁅ m ⁆ Qᵀ Q
   Q₄ (r · r₁ · s) m = ⊥
   Q₄ (Y r · s) m = ⊥
   Q₄ (＃ x · s) m = ⊥
@@ -298,10 +298,10 @@ big→inter {k} (r · s)        Q M⇓ =
   Q₄ (?⁰ t ↑ t₁ ↓ t₂) m = ⊥
 
   Q₃₄ : ∀ t n → Qᴱ (_· s) (Qᵀ Q₃) t n → Q₄ t n
-  Q₃₄ t1 n (.(ƛ x ⇒ t) , er , .(v-ƛ x t) , is-ƛ {x} {t} , qq) = subst (λ q → Q₄ q n) (sym er) qq
+  Q₃₄ t1 n (.(ƛ x ⦂ A ⇒ t) , er , .(v-ƛ x A t) , is-ƛ {x} {A} {t} , qq) = subst (λ q → Q₄ q n) (sym er) qq
 
   Q₄i : ∀ v n → Q₄ v n → v ⇛⁅ n ⁆ Qᵀ Q
-  Q₄i ((ƛ x ⇒ t) · s) n qq = qq
+  Q₄i ((ƛ x ⦂ A ⇒ t) · s) n qq = qq
 
 big→inter {suc k} (Y t)          Q M⇓ =
   ⇛ˢ (Y t ∎ᵣ) Ｙ (▹map (big→inter (t · Y t) Q) M⇓)
@@ -319,17 +319,17 @@ big→inter {k} (𝓈 t)          Q M⇓ =
   where
   Q₂ : Val → ℕ → 𝒰
   Q₂ (v-＃ n)  m = (＃ (suc n)) ⇛⁅ m ⁆ Qᵀ Q
-  Q₂ (v-ƛ _ _) m = ⊥
+  Q₂ (v-ƛ _ _ _) m = ⊥
 
   Q𝓈₂-impl : ∀ v s → Q𝓈 Q v s → Q₂ v s
   Q𝓈₂-impl (v-＃ x)  s (n , e , q) =
     big→inter (＃ suc x) Q (subst (λ q → Q (v-＃ (suc q)) s) (sym (v-＃-inj e)) q)
-  Q𝓈₂-impl (v-ƛ x t) s (n , e , q) =
+  Q𝓈₂-impl (v-ƛ x A t) s (n , e , q) =
     absurd (v-＃≠v-ƛ (sym e))
 
   Q₃ : Val → ℕ → 𝒰
   Q₃ (v-＃ n)  m = (𝓈 (＃ n)) ⇛⁅ m ⁆ Qᵀ Q
-  Q₃ (v-ƛ x t) m = ⊥
+  Q₃ (v-ƛ x A t) m = ⊥
 
   Q₂₃-impl : ∀ v n → Q₂ v n → Q₃ v n
   Q₂₃-impl (v-＃ m) n qq =
@@ -337,12 +337,12 @@ big→inter {k} (𝓈 t)          Q M⇓ =
 
   Q₄ : Term → ℕ → 𝒰
   Q₄ (` x) m = ⊥
-  Q₄ (ƛ x ⇒ t) m = ⊥
+  Q₄ (ƛ x ⦂ A ⇒ t) m = ⊥
   Q₄ (r · s) m = ⊥
   Q₄ (Y t) m = ⊥
   Q₄ (＃ _) m = ⊥
   Q₄ (𝓈 (` x)) m = ⊥
-  Q₄ (𝓈 (ƛ x ⇒ t)) m = ⊥
+  Q₄ (𝓈 (ƛ x ⦂ A ⇒ t)) m = ⊥
   Q₄ (𝓈 (t · t₁)) m = ⊥
   Q₄ (𝓈 (Y t)) m = ⊥
   Q₄ (𝓈 (＃ n)) m = 𝓈 (＃ n) ⇛⁅ m ⁆ Qᵀ Q
@@ -370,17 +370,17 @@ big→inter {k}     (𝓅 t)          Q M⇓ =
   where
   Q₂ : Val → ℕ → 𝒰
   Q₂ (v-＃ n)  m = (＃ (pred n)) ⇛⁅ m ⁆ Qᵀ Q
-  Q₂ (v-ƛ _ _) m = ⊥
+  Q₂ (v-ƛ _ _ _) m = ⊥
 
   Q𝓅₂-impl : ∀ v s → Q𝓅 Q v s → Q₂ v s
   Q𝓅₂-impl (v-＃ x)  s (n , e , q) =
     big→inter (＃ pred x) Q (subst (λ q → Q (v-＃ (pred q)) s) (sym (v-＃-inj e)) q)
-  Q𝓅₂-impl (v-ƛ x t) s (n , e , q) =
+  Q𝓅₂-impl (v-ƛ x A t) s (n , e , q) =
     absurd (v-＃≠v-ƛ (sym e))
 
   Q₃ : Val → ℕ → 𝒰
   Q₃ (v-＃ n)  m = (𝓅 (＃ n)) ⇛⁅ m ⁆ Qᵀ Q
-  Q₃ (v-ƛ x t) m = ⊥
+  Q₃ (v-ƛ x A t) m = ⊥
 
   Q₂₃-impl : ∀ v n → Q₂ v n → Q₃ v n
   Q₂₃-impl (v-＃  zero  ) n qq = small-rtc-inter (𝓅 (＃ 0)    ) (＃ 0) (Qᵀ Q) (^—↠⁰ β-𝓅⁰) qq
@@ -388,13 +388,13 @@ big→inter {k}     (𝓅 t)          Q M⇓ =
 
   Q₄ : Term → ℕ → 𝒰
   Q₄ (` x) m = ⊥
-  Q₄ (ƛ x ⇒ t) m = ⊥
+  Q₄ (ƛ x ⦂ A ⇒ t) m = ⊥
   Q₄ (r · s) m = ⊥
   Q₄ (Y t) m = ⊥
   Q₄ (＃ _) m = ⊥
   Q₄ (𝓈 _) m = ⊥
   Q₄ (𝓅 (` x)) m = ⊥
-  Q₄ (𝓅 (ƛ x ⇒ t)) m = ⊥
+  Q₄ (𝓅 (ƛ x ⦂ A ⇒ t)) m = ⊥
   Q₄ (𝓅 (t · t₁)) m = ⊥
   Q₄ (𝓅 (Y t)) m = ⊥
   Q₄ (𝓅 (＃ n)) m = 𝓅 (＃ n) ⇛⁅ m ⁆ Qᵀ Q
@@ -422,7 +422,7 @@ big→inter {k}     (?⁰ r ↑ s ↓ t) Q M⇓ =
   Q₂ : Val → ℕ → 𝒰
   Q₂ (v-＃  zero  ) m = s ⇛⁅ m ⁆ Qᵀ Q
   Q₂ (v-＃ (suc _)) m = t ⇛⁅ m ⁆ Qᵀ Q
-  Q₂ (v-ƛ _ _     ) m = ⊥
+  Q₂ (v-ƛ _ _ _     ) m = ⊥
 
   Q?₂-impl : ∀ v n → Q? s t Q v n → Q₂ v n
   Q?₂-impl (v-＃  zero)   n qq = big→inter s Q qq
@@ -430,7 +430,7 @@ big→inter {k}     (?⁰ r ↑ s ↓ t) Q M⇓ =
 
   Q₃ : Val → ℕ → 𝒰
   Q₃ (v-＃ n ) m = (?⁰ (＃ n) ↑ s ↓ t) ⇛⁅ m ⁆ Qᵀ Q
-  Q₃ (v-ƛ _ _) m = ⊥
+  Q₃ (v-ƛ _ _ _) m = ⊥
 
   Q₂₃-impl : ∀ v n → Q₂ v n → Q₃ v n
   Q₂₃-impl (v-＃  zero  ) n qq = small-rtc-inter (?⁰ ＃ 0     ↑ s ↓ t) s (Qᵀ Q) (^—↠⁰ β-?⁰) qq
@@ -438,14 +438,14 @@ big→inter {k}     (?⁰ r ↑ s ↓ t) Q M⇓ =
 
   Q₄ : Term → ℕ → 𝒰
   Q₄ (` x) m = ⊥
-  Q₄ (ƛ x ⇒ t) m = ⊥
+  Q₄ (ƛ x ⦂ A ⇒ t) m = ⊥
   Q₄ (r · s) m = ⊥
   Q₄ (Y t) m = ⊥
   Q₄ (＃ x) m = ⊥
   Q₄ (𝓈 t) m = ⊥
   Q₄ (𝓅 t) m = ⊥
   Q₄ (?⁰ ` x ↑ t₁ ↓ t₂) m = ⊥
-  Q₄ (?⁰ ƛ x ⇒ t ↑ t₁ ↓ t₂) m = ⊥
+  Q₄ (?⁰ ƛ x ⦂ A ⇒ t ↑ t₁ ↓ t₂) m = ⊥
   Q₄ (?⁰ t · t₃ ↑ t₁ ↓ t₂) m = ⊥
   Q₄ (?⁰ Y t ↑ t₁ ↓ t₂) m = ⊥
   Q₄ (?⁰ ＃ n ↑ t₁ ↓ t₂) m = (?⁰ ＃ n ↑ t₁ ↓ t₂) ⇛⁅ m ⁆ Qᵀ Q
@@ -470,7 +470,7 @@ inter→big {k} M Q M⇛ =
   where
   go : ∀ v n → Qᵀ Q v n → v ⇓⁅ n ⁆ Q
   go .(＃ _)    n (.(v-＃ _  ) , is-＃ , q) = q
-  go .(ƛ _ ⇒ _) n (.(v-ƛ _ _) , is-ƛ , q) = q
+  go .(ƛ _ ⦂ _ ⇒ _) n (.(v-ƛ _ _ _) , is-ƛ , q) = q
 
 -- 2.14.1
 
@@ -520,3 +520,27 @@ small-rtc→big {k} M Q M⇒ =
   where
   go : ∀ v n → Q⁰ (Qᵀ⁰ Q) v n → Qᵀ (λ w l → (l ＝ 0) × Q w) v n
   go v n (n0 , w , iw , qw) = w , iw , n0 , qw
+
+-- 2.4.1
+
+big→small-rtc-v : {k : ℕ} (M N : Term) (V : Val)
+                → IsVal N V
+                → M ⇓⁅ k ⁆ᵛ V
+                → M =⇒⁅ k ⁆ᵗ N
+big→small-rtc-v {k} M N V iV M⇓ =
+  =⇒-covariant (Qᵀ⁰ (_＝ V)) (_＝ N)
+               (λ T → λ where
+                          (V₁ , iV₁ , e) → IsVal-unique T N V (subst (IsVal T) e iV₁) iV)
+               M k (big→small-rtc M (_＝ V) M⇓)
+
+-- 2.4.2
+
+small-rtc→big-v : {k : ℕ} (M N : Term) (V : Val)
+                → IsVal N V
+                → M =⇒⁅ k ⁆ᵗ N
+                → M ⇓⁅ k ⁆ᵛ V
+small-rtc→big-v {k} M N V iV M⇒ =
+  small-rtc→big M (_＝ V)
+     (=⇒-covariant (_＝ N) (Qᵀ⁰ (_＝ V))
+        (λ T e → V , subst (λ q → IsVal q V) (sym e) iV , refl)
+        M k M⇒)

@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module PCF.ExtE.Smallstep where
+module PCF.Ext.UnsafeY.Smallstep where
 
 open import Prelude
 open import Data.Empty
@@ -9,9 +9,9 @@ open import Data.String
 
 open import Later
 open import Interlude
-open import PCF.ExtE.TyTerm
-open import PCF.ExtE.Subst
-open import PCF.ExtE.TyDeriv
+open import PCF.Ext.TyTerm
+open import PCF.Ext.Subst
+open import PCF.Ext.TyDeriv
 
 infix  1 begin_
 infixr 2 _—→⟨_⟩_

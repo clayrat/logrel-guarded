@@ -1,4 +1,4 @@
-module PCF.ExtE.TyDeriv where
+module PCF.Ext.TyDeriv where
 
 open import Prelude hiding (_⊆_)
 open import Data.Unit
@@ -9,8 +9,8 @@ open import Data.List
 open import Structures.IdentitySystem hiding (J)
 
 open import Interlude
-open import PCF.ExtE.TyTerm
-open import PCF.ExtE.Subst
+open import PCF.Ext.TyTerm
+open import PCF.Ext.Subst
 
 infix  4  _∋_⦂_
 infix  4  _⊢_⦂_

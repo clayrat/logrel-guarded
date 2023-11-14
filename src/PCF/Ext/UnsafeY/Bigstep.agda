@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module PCF.ExtE.Bigstep where
+module PCF.Ext.UnsafeY.Bigstep where
 
 open import Prelude
 open import Data.Empty
@@ -7,8 +7,8 @@ open import Data.Nat hiding (_·_)
 open import Data.String
 
 open import Later
-open import PCF.ExtE.TyTerm
-open import PCF.ExtE.Subst
+open import PCF.Ext.TyTerm
+open import PCF.Ext.Subst
 
 -- Step-indexed Big-Step Operational Semantics (alternative)
 

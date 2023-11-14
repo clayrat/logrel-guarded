@@ -1,5 +1,5 @@
 {-# OPTIONS --guarded #-}
-module PCF.Ext.Denot where
+module PCF.Ext.UnsafeY.Denot where
 
 open import Prelude
 open import Data.Empty
@@ -8,8 +8,8 @@ open import Data.Nat
 open import Later
 open import Interlude
 open import Guarded.Partial
-open import PCF.Ext.Term
-open import PCF.Ext.Ty
+open import PCF.Ext.TyTerm
+open import PCF.Ext.TyDeriv
 
 private variable
   Γ Δ : Ctx
@@ -43,10 +43,13 @@ _^ : ∀ {A}
 𝒞⟦_⟧ : Ctx → 𝒰
 𝒞⟦ Γ ⟧ = ∀ T x → Γ ∋ x ⦂ T → 𝒯⟦ T ⟧
 
+𝒞∅ : 𝒞⟦ ∅ ⟧
+𝒞∅ T x i = absurd (∅-empty i)
+
 -- Extending denoted contexts
 _＆_ : ∀ {i}
      → 𝒞⟦ Γ ⟧ → 𝒯⟦ T ⟧ → 𝒞⟦ Γ , i ⦂ T ⟧
-(_ ＆ a) _ _  here        = a
+(_ ＆ a) _ _ (here ei et) = subst 𝒯⟦_⟧ (sym et) a
 (ρ ＆ _) T x (there ne i) = ρ T x i
 
 -- Denotation of terms
@@ -60,7 +63,7 @@ ifz^ x y = (ifz x y) ^
 ℰ⟦_⟧ : ∀ {t}
      → Γ ⊢ t ⦂ T → 𝒞⟦ Γ ⟧ → 𝒯⟦ T ⟧
 ℰ⟦ ⊢` i ⟧          γ = γ _ _ i
-ℰ⟦ ⊢ƛ ⊢t ⟧         γ = λ ta → ℰ⟦ ⊢t ⟧ (γ ＆ ta)
+ℰ⟦ ⊢ƛ e ⊢t ⟧       γ = λ ta → ℰ⟦ ⊢t ⟧ (γ ＆ ta)
 ℰ⟦ ⊢r ⊢· ⊢s ⟧     γ = ℰ⟦ ⊢r ⟧ γ (ℰ⟦ ⊢s ⟧ γ)
 ℰ⟦ ⊢Y ⊢t ⟧        γ = fix $ θ ∘ ▹map (ℰ⟦ ⊢t ⟧ γ)
 ℰ⟦ ⊢＃ {n} ⟧        γ = now n
@@ -77,18 +80,18 @@ Y-δ ⊢t = fun-ext λ γ → fix-path (λ ta▹ → θ (▹map (ℰ⟦ ⊢t ⟧
 
 -- 2.16
 
-ifz-δ : ∀ {L L′ M N}
+ifz-δ : ∀ {L L′ M N γ}
        → (⊢L  : Γ ⊢ L  ⦂ 𝓝)
        → (⊢L′ : Γ ⊢ L′ ⦂ 𝓝)
        → (⊢M : Γ ⊢ M ⦂ T)
        → (⊢N : Γ ⊢ N ⦂ T)
-       → (ℰ⟦ ⊢L ⟧ ＝ δ ∘ ℰ⟦ ⊢L′ ⟧)
-       → ℰ⟦ ⊢?⁰ ⊢L ⊢M ⊢N ⟧ ＝ δ ∘ ℰ⟦ ⊢?⁰ ⊢L′ ⊢M ⊢N ⟧
-ifz-δ ⊢L ⊢L′ ⊢M ⊢N eq = fun-ext λ γ →
+       → (ℰ⟦ ⊢L ⟧ γ ＝ δ (ℰ⟦ ⊢L′ ⟧ γ))
+       → ℰ⟦ ⊢?⁰ ⊢L ⊢M ⊢N ⟧ γ ＝ δ (ℰ⟦ ⊢?⁰ ⊢L′ ⊢M ⊢N ⟧ γ)
+ifz-δ {γ} ⊢L ⊢L′ ⊢M ⊢N eq =
   (ℰ⟦ ⊢?⁰ ⊢L ⊢M ⊢N ⟧ γ)
     ＝⟨⟩
   ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ) (ℰ⟦ ⊢L ⟧ γ)
-    ＝⟨ ap (λ q → ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ) (q γ)) eq ⟩
+    ＝⟨ ap (ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ)) eq ⟩
   ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ) (δ (ℰ⟦ ⊢L′ ⟧ γ))
     ＝⟨⟩
   θ (dfix (^-body (ifz (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ))) ⊛ next (ℰ⟦ ⊢L′ ⟧ γ))
