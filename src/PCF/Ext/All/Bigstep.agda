@@ -16,25 +16,28 @@ open import PCF.Ext.Subst
 Q·-rec : (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰)
        → Term → (Val → ℕ → 𝒰)
        → Val → ℕ → 𝒰
-Q·-rec ⇓▹ s Q (v-ƛ x A t) zero = ⊥
+Q·-rec ⇓▹ _ _ (v-ƛ _ _ _)  zero   = ⊥
 Q·-rec ⇓▹ s Q (v-ƛ x A t) (suc m) = ▸ ⇓▹ (t [ x := s ]) m Q
-Q·-rec ⇓▹ _ _ (v-＃ _)  _ = ⊥
+Q·-rec ⇓▹ _ _ (v-＃ _)     _      = ⊥
 
 Q𝓈 : (Val → ℕ → 𝒰)
    → Val → ℕ → 𝒰
-Q𝓈 Q v l = Σ[ n ꞉ ℕ ] (v ＝ v-＃ n) × Q (v-＃ (suc n)) l
+Q𝓈 Q (v-＃ _)     zero   = ⊥
+Q𝓈 Q (v-＃ n)    (suc l) = ▹ Q (v-＃ (suc n)) l
+Q𝓈 Q (v-ƛ _ _ _)  l      = ⊥
 
 -- Paviotti'16 2.3.1 says this should guard against n=0 but then it's inconsistent with small-step
 Q𝓅 : (Val → ℕ → 𝒰)
    → Val → ℕ → 𝒰
-Q𝓅 Q v l = Σ[ n ꞉ ℕ ] (v ＝ v-＃ n) × Q (v-＃ (pred n)) l
+Q𝓅 Q (v-＃ _)     zero   = ⊥
+Q𝓅 Q (v-＃ n)    (suc l) = ▹ Q (v-＃ (pred n)) l
+Q𝓅 Q (v-ƛ _ _ _)  _      = ⊥
 
 Q?-rec : (Term → ℕ → (Val → ℕ → 𝒰) → ▹ 𝒰)
        → Term → Term → (Val → ℕ → 𝒰)
        → Val → ℕ → 𝒰
-Q?-rec ⇓▹ _ _ _ (v-＃  zero)    zero   = ⊥
+Q?-rec ⇓▹ _ _ _ (v-＃  _)       zero   = ⊥
 Q?-rec ⇓▹ s _ Q (v-＃  zero)   (suc m) = ▸ ⇓▹ s m Q
-Q?-rec ⇓▹ _ _ _ (v-＃ (suc _))  zero   = ⊥
 Q?-rec ⇓▹ _ t Q (v-＃ (suc _)) (suc m) = ▸ ⇓▹ t m Q
 Q?-rec ⇓▹ _ _ _ (v-ƛ _ _ _)     _      = ⊥
 
@@ -46,10 +49,8 @@ Q?-rec ⇓▹ _ _ _ (v-ƛ _ _ _)     _      = ⊥
 ⇓⁅⁆-case ⇓▹ (Y _)           zero   _ = ⊥
 ⇓⁅⁆-case ⇓▹ (Y t)          (suc k) Q = ▸ ⇓▹ (t · Y t) k Q
 ⇓⁅⁆-case ⇓▹ (＃ n)          k      Q = Q (v-＃ n) k
-⇓⁅⁆-case ⇓▹ (𝓈 _)           zero   _ = ⊥
-⇓⁅⁆-case ⇓▹ (𝓈 t)          (suc k) Q = ▸ ⇓▹ t k (Q𝓈 Q)
-⇓⁅⁆-case ⇓▹ (𝓅 _)           zero   _ = ⊥
-⇓⁅⁆-case ⇓▹ (𝓅 t)          (suc k) Q = ▸ ⇓▹ t k (Q𝓅 Q)
+⇓⁅⁆-case ⇓▹ (𝓈 t)           k      Q = ⇓⁅⁆-case ⇓▹ t k (Q𝓈 Q)
+⇓⁅⁆-case ⇓▹ (𝓅 t)           k      Q = ⇓⁅⁆-case ⇓▹ t k (Q𝓅 Q)
 ⇓⁅⁆-case ⇓▹ (?⁰ r ↑ s ↓ t)  k      Q = ⇓⁅⁆-case ⇓▹ r k (Q?-rec ⇓▹ s t Q)
 
 ⇓⁅⁆-distr : ▹ (Term → ℕ → (Val → ℕ → 𝒰) → 𝒰)
@@ -99,11 +100,11 @@ Q?s-eq {t} {m} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t m Q
 Y-eq : ∀ {t k Q} → (Y t) ⇓⁅ suc k ⁆ Q ＝ ▹ ((t · Y t) ⇓⁅ k ⁆ Q)
 Y-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α (t · Y t) k Q
 
-𝓈-eq : ∀ {t k Q} → 𝓈 t ⇓⁅ suc k ⁆ Q ＝ ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q))
-𝓈-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓈 Q)
+--𝓈-eq : ∀ {t k Q} → 𝓈 t ⇓⁅ suc k ⁆ Q ＝ ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q))
+--𝓈-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓈 Q)
 
-𝓅-eq : ∀ {t k Q} → 𝓅 t ⇓⁅ suc k ⁆ Q ＝ ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q))
-𝓅-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓅 Q)
+--𝓅-eq : ∀ {t k Q} → 𝓅 t ⇓⁅ suc k ⁆ Q ＝ ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q))
+--𝓅-eq {t} {k} {Q} i = ▹[ α ] pfix ⇓⁅⁆-body i α t k (Q𝓅 Q)
 
 --?-eq : ∀ {r s t k Q}
 --     → (?⁰ r ↑ s ↓ t) ⇓⁅ k ⁆ Q ＝ ▹ (r ⇓⁅ k ⁆ (Q? s t Q))
@@ -141,17 +142,17 @@ Q?s⇉ {s} {t} {m} {n} = transport (Q?s-eq {s} {t} {m} {n})
 Y⇉ : ∀ {t k Q} → (Y t) ⇓⁅ suc k ⁆ Q → ▹ ((t · Y t) ⇓⁅ k ⁆ Q)
 Y⇉ = transport Y-eq
 
-⇉𝓈 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q)) → 𝓈 t ⇓⁅ suc k ⁆ Q
-⇉𝓈 {Q} = transport (sym $ 𝓈-eq {Q = Q})
+--⇉𝓈 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q)) → 𝓈 t ⇓⁅ suc k ⁆ Q
+--⇉𝓈 {Q} = transport (sym $ 𝓈-eq {Q = Q})
 
-𝓈⇉ : ∀ {t k Q} → 𝓈 t ⇓⁅ suc k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q))
-𝓈⇉ {Q} = transport (𝓈-eq {Q = Q})
+--𝓈⇉ : ∀ {t k Q} → 𝓈 t ⇓⁅ suc k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓈 Q))
+--𝓈⇉ {Q} = transport (𝓈-eq {Q = Q})
 
-⇉𝓅 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q)) → 𝓅 t ⇓⁅ suc k ⁆ Q
-⇉𝓅 {Q} = transport (sym $ 𝓅-eq {Q = Q})
+--⇉𝓅 : ∀ {t k Q} → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q)) → 𝓅 t ⇓⁅ suc k ⁆ Q
+--⇉𝓅 {Q} = transport (sym $ 𝓅-eq {Q = Q})
 
-𝓅⇉ : ∀ {t k Q} → 𝓅 t ⇓⁅ suc k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q))
-𝓅⇉ {Q} = transport (𝓅-eq {Q = Q})
+--𝓅⇉ : ∀ {t k Q} → 𝓅 t ⇓⁅ suc k ⁆ Q → ▹ (t ⇓⁅ k ⁆ (Q𝓅 Q))
+--𝓅⇉ {Q} = transport (𝓅-eq {Q = Q})
 
 --⇉? : ∀ {r s t k Q}
 --       → ▹ (r ⇓⁅ k ⁆ (Q? s t Q))
