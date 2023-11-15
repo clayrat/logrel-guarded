@@ -201,11 +201,11 @@ _=⇒⁅_⁆_ : Term → ℕ → (Term → 𝒰) → 𝒰
 M =⇒⁅ 0     ⁆ Q = Σ[ N ꞉ Term ] (M —↠⁰ N) × (Q N)
 M =⇒⁅ suc k ⁆ Q = Σ[ M′ ꞉ Term ] (Σ[ M″ ꞉ Term ] (M —↠⁰ M′) × (M′ —→⁅ s¹ ⁆ M″) × ▹ (M″ =⇒⁅ k ⁆ Q))
 
-=⇒-covariant : (Q R : Term → 𝒰) → (∀ t → Q t → R t)
-             → (M : Term) → (k : ℕ)
+=⇒-covariant : ∀ {k Q R M}
+             → (∀ t → Q t → R t)
              → M =⇒⁅ k ⁆ Q → M =⇒⁅ k ⁆ R
-=⇒-covariant Q R qr M  zero   (P , sP , QP)          = P , sP , qr P QP
-=⇒-covariant Q R qr M (suc k) (S , T , sS , sT , S▹) = S , T , sS , sT , ▹map (=⇒-covariant Q R qr T k) S▹
+=⇒-covariant {k = zero}  qr (P , sP , QP)          = P , sP , qr P QP
+=⇒-covariant {k = suc k} qr (S , T , sS , sT , S▹) = S , T , sS , sT , ▹map (=⇒-covariant qr) S▹
 
 -- step RTC over arbitrary steps
 _=⇒⁅_⁆ᵗ_ : Term → ℕ → Term → 𝒰

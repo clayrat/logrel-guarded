@@ -263,3 +263,102 @@ Qᵀ-impl : (Q : Val → ℕ → 𝒰)
         → Qᵀ Q N k → N ⇓⁅ k ⁆ Q
 Qᵀ-impl Q (ƛ x ⦂ A ⇒ t) k (.(v-ƛ x A t) , is-ƛ , q) = q
 Qᵀ-impl Q (＃ n)        k (.(v-＃ n)    , is-＃ , q) = q
+
+-- TODO looks like Q₂ and Q₃ can be merged in all cases
+big→inter-body :
+               ▹ (∀ k M Q → M ⇓⁅ k ⁆ Q → M ⇛⁅ k ⁆ Qᵀ Q)
+               →  ∀ k M Q → M ⇓⁅ k ⁆ Q → M ⇛⁅ k ⁆ Qᵀ Q
+big→inter-body ih▹  k      (ƛ x ⦂ A ⇒ M)   Q M⇓ =
+  ⇛ᵏ (ƛ x ⦂ A ⇒ M ∎ᵣ) (v-ƛ x A M , is-ƛ , M⇓)
+big→inter-body ih▹  k      (M · N)        Q M⇓ = {!!}
+big→inter-body ih▹ (suc k) (Y M)          Q M⇓ =
+  ⇛ˢ (Y M ∎ᵣ) Ｙ (▹map (big→inter-body ih▹ k (M · Y M) Q) (Y⇉ M⇓))
+big→inter-body ih▹  k      (＃ n)          Q M⇓ =
+  ⇛ᵏ (＃ n ∎ᵣ) (v-＃ n , is-＃ , M⇓)
+big→inter-body ih▹  k      (𝓈 M)          Q M⇓ = {!!}
+big→inter-body ih▹  k      (𝓅 M)          Q M⇓ = {!!}
+big→inter-body ih▹  k      (?⁰ L ↑ M ↓ N) Q M⇓ = {!!}
+
+big→inter : (k : ℕ) (M : Term) (Q : Val → ℕ → 𝒰)
+          → M ⇓⁅ k ⁆ Q
+          → M ⇛⁅ k ⁆ (Qᵀ Q)
+big→inter = fix big→inter-body
+
+-- 2.13.2
+
+inter→big : ∀ {k M Q}
+          → M ⇛⁅ k ⁆ (Qᵀ Q)
+          → M ⇓⁅ k ⁆ Q
+inter→big {Q} = inter-big-comp ∘ ⇛-covariant go
+  where
+  go : ∀ v n → Qᵀ Q v n → v ⇓⁅ n ⁆ Q
+  go .(＃ _)        n (.(v-＃ _  )  , is-＃ , q) = q
+  go .(ƛ _ ⦂ _ ⇒ _) n (.(v-ƛ _ _ _) , is-ƛ , q) = q
+
+-- 2.14.1
+
+Q⁰ : (Term → 𝒰) → Term → ℕ → 𝒰
+Q⁰ Q N k = (k ＝ 0) × Q N
+
+inter→small-rtc : ∀ {k M Q}
+                → M ⇛⁅ k ⁆ Q⁰ Q
+                → M =⇒⁅ k ⁆ Q
+inter→small-rtc {k = zero}  (N , MN , _ , QN)             =
+  N , MN , QN
+inter→small-rtc {k = suc k} (inl (N , MN , e , _))        =
+  absurd (suc≠zero e)
+inter→small-rtc {k = suc k} (inr (N , R , MN , NR , QR▹)) =
+  N , R , MN , NR , ▹map inter→small-rtc QR▹
+
+-- 2.14.2
+
+small-rtc→inter : ∀ {k M Q}
+                → M =⇒⁅ k ⁆ Q
+                → M ⇛⁅ k ⁆ Q⁰ Q
+small-rtc→inter {k = zero } {Q} (N , MN , QN)           = ⇛ᵏ {Q = Q⁰ Q} MN (refl , QN)
+small-rtc→inter {k = suc k}     (N , R , MN , NR , QR▹) = ⇛ˢ MN NR (▹map small-rtc→inter QR▹)
+
+-- 2.3.1
+
+big→small-rtc : ∀ {k M Q}
+              → M ⇓⁅ k ⁆⁰ Q
+              → M =⇒⁅ k ⁆ (Qᵀ⁰ Q)
+big→small-rtc {k} {M} {Q} M⇓ =
+  inter→small-rtc $
+  ⇛-covariant go $
+  big→inter k M (λ v l → (l ＝ 0) × (Q v)) M⇓
+  where
+  go : ∀ v n → Qᵀ (λ w l → (l ＝ 0) × Q w) v n → Q⁰ (Qᵀ⁰ Q) v n
+  go v n (w , iw , n0 , qw) = n0 , w , iw , qw
+
+-- 2.3.2
+
+small-rtc→big : ∀ {k M Q}
+              → M =⇒⁅ k ⁆ (Qᵀ⁰ Q)
+              → M ⇓⁅ k ⁆⁰ Q
+small-rtc→big {Q} = inter→big ∘ ⇛-covariant go ∘ small-rtc→inter
+  where
+  go : ∀ v n → Q⁰ (Qᵀ⁰ Q) v n → Qᵀ (λ w l → (l ＝ 0) × Q w) v n
+  go v n (n0 , w , iw , qw) = w , iw , n0 , qw
+
+-- 2.4.1
+
+big→small-rtc-v : ∀ {k M N V}
+                → IsVal N V
+                → M ⇓⁅ k ⁆ᵛ V
+                → M =⇒⁅ k ⁆ᵗ N
+big→small-rtc-v {N} {V} iV = =⇒-covariant go ∘ big→small-rtc
+  where
+  go : ∀ T → Qᵀ⁰ (_＝ V) T → T ＝ N
+  go T (W , iW , e) = IsVal-unique T N V (subst (IsVal T) e iW) iV
+
+-- 2.4.2
+
+small-rtc→big-v : ∀ {k M N V}
+                → IsVal N V
+                → M =⇒⁅ k ⁆ᵗ N
+                → M ⇓⁅ k ⁆ᵛ V
+small-rtc→big-v {N} {V} iV = small-rtc→big ∘ =⇒-covariant go
+  where
+  go : ∀ T → T ＝ N → Qᵀ⁰ (_＝ V) T
+  go T e = V , subst (λ q → IsVal q V) (sym e) iV , refl
