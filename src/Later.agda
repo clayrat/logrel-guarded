@@ -47,18 +47,18 @@ _⊛_ : ▹ ((a : A) → B a)
 ▹map² : {B C : 𝒰 ℓ} → (f : A → B → C) → ▹ A → ▹ B → ▹ C
 ▹map² f x y α = f (x α) (y α)
 
-▹-ext : ∀ {A : 𝒰} → {f g : ▹ A} → (▸ λ α → f α ＝ g α) → f ＝ g
+▹-ext : ∀ {A : 𝒰} → {f g : ▹ A} → (▹[ α ] (f α ＝ g α)) → f ＝ g
 ▹-ext eq i α = eq α i
 
-▹-ap : ∀ {A : 𝒰} → {f g : ▹ A} → f ＝ g → ▸ λ α → f α ＝ g α
+▹-ap : ∀ {A : 𝒰} → {f g : ▹ A} → f ＝ g → ▹[ α ] (f α ＝ g α)
 ▹-ap eq α i = eq i α
 
 -- These will compute only on diamond ticks.
 postulate
   dfix : (▹ A → A) → ▹ A
-  pfix : (f : ▹ A → A) → dfix f ＝ λ _ → f (dfix f)
+  pfix : (f : ▹ A → A) → dfix f ＝ next (f (dfix f))
 
-pfix-ext : (f : ▹ A → A) → ▸ λ α → dfix f α ＝ f (dfix f)
+pfix-ext : (f : ▹ A → A) → ▹[ α ] (dfix f α ＝ f (dfix f))
 pfix-ext f α i = pfix f i α
 
 fix : (▹ A → A) → A
