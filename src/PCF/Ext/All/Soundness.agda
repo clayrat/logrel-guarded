@@ -17,6 +17,7 @@ open import PCF.Ext.TyDeriv
 open import PCF.Ext.All.Bigstep
 open import PCF.Ext.All.Smallstep
 open import PCF.Ext.All.Correspondence
+open import PCF.Ext.All.Eval
 open import PCF.Ext.All.Denot
 
 -- Soundness
@@ -25,6 +26,57 @@ private variable
   Γ Δ : Ctx
   T : Ty
 
+𝒮 : (T : Ty) → (t : Term) → ∅ ⊢ t  ⦂ T → Part (TVal T)
+𝒮 (S ⇒ T) t ⊢t = Eval (S ⇒ T) t ⊢t
+𝒮  𝓝     t ⊢t = mapᵖ (λ n → ＃ n , v-＃ n , is-＃ {n} , ⊢＃) (ℰ⟦ ⊢t ⟧ 𝒞∅)
+
+S-Eval : (T : Ty) → (t : Term) → (⊢t : ∅ ⊢ t  ⦂ T)
+       → 𝒮 T t ⊢t ＝ Eval T t ⊢t
+S-Eval (S ⇒ T) t ⊢t = refl
+S-Eval 𝓝 .(L · M) (_⊢·_ {L} {M} {A} tL tM) with (Eval (A ⇒ 𝓝) L tL)
+... | now (.(ƛ x ⦂ S ⇒ N) , .(v-ƛ _ _ _) , is-ƛ {x} {A = S} {t = N} , ⊢ƛ e tS) =
+   {!!} ∙ ap (λ q → later (q ⊛ next 𝓝 ⊛ next (N [ x := M ]) ⊛ next (subst-ty tM tS))) (sym $ pfix Φ)
+... | later x = ap later (▹-ext (λ α → {!let qq = !}))
+S-Eval 𝓝 .(Y M) (⊢Y {M} tM) =
+  {!!} ∙ ap (λ q → later (q ⊛ next 𝓝 ⊛ next (M · Y M) ⊛ next (tM ⊢· ⊢Y tM))) (sym $ pfix Φ)
+S-Eval 𝓝 .(＃ n) (⊢＃ {n}) = refl
+S-Eval 𝓝 .(𝓈 M) (⊢𝓈 {M} ⊢M) =
+  ap δᵖ (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)
+         ∙ ap (λ q → mapᵖ q (ℰ⟦ ⊢M ⟧ 𝒞∅))
+              (fun-ext λ x → refl)
+         ∙ sym (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)))
+  ∙ ap (δᵖ ∘ mapᵖ Φ-𝓈) (S-Eval 𝓝 M ⊢M)
+S-Eval 𝓝 .(𝓅 M) (⊢𝓅 {M} ⊢M) =
+  ap δᵖ (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)
+         ∙ ap (λ q → mapᵖ q (ℰ⟦ ⊢M ⟧ 𝒞∅))
+              (fun-ext λ x → refl)
+         ∙ sym (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)))
+  ∙ ap (δᵖ ∘ mapᵖ Φ-𝓅) (S-Eval 𝓝 M ⊢M)
+S-Eval 𝓝 .(?⁰ L ↑ M ↓ N) (⊢?⁰ {L} {M} {N} tL tM tN) =
+  let l1 = S-Eval 𝓝 L tL
+      m1 = S-Eval 𝓝 M tM
+      n1 = S-Eval 𝓝 N tN
+    in
+  {!!}
+
+{-
+Eval-sound : ∀ {k T M N V}
+          → (iV : IsVal N V)
+          → M ⇓⁅ k ⁆ᵛ V
+          → (⊢M : ∅ ⊢ M ⦂ T)
+          → (⊢N : ∅ ⊢ N ⦂ T)
+          → Eval T M ⊢M ＝ delay-by k (N , V , iV , ⊢N)
+Eval-sound is-ƛ (k0 , e) (⊢ƛ e₁ tM)      (⊢ƛ e₂ tN) = {!!}
+Eval-sound iV    M⇓      (tM ⊢· tM₁)      ⊢N        = {!!}
+Eval-sound iV    M⇓      (⊢Y tM)          ⊢N        = {!!}
+Eval-sound is-＃ (k0 , e)  ⊢＃             ⊢＃       = {!!}
+Eval-sound {(zero)} iV M⇓ (⊢𝓈 tM) ⊢N =
+  let qq = {!!}
+Eval-sound {suc k} iV M⇓ (⊢𝓈 tM) ⊢N = {!!}
+Eval-sound iV    M⇓      (⊢𝓅 tM)          ⊢N        = {!!}
+Eval-sound iV    M⇓      (⊢?⁰ tM tM₁ tM₂) ⊢N        = {!!}
+-}
+{-
 δ-comm : ∀ {k T}
         → (τ : 𝒯⟦ T ⟧)
         → (δ ⁽ k ⁾) (δ τ) ＝ δ ((δ ⁽ k ⁾) τ)
@@ -193,6 +245,20 @@ step-sound {T}       {.s¹} {.((ƛ x ⦂ A ⇒ M) · N)}   {.(M [ x := N ])}  (�
      ∙ subst-lemma 𝒞∅ ⊢N ⊢M)
 step-sound {T}       {.s¹} {.(Y M)}                {.(M · Y M)}        (Ｙ {M})                      (⊢Y ⊢M)               (⊢M₁ ⊢· ⊢Y ⊢M₂)    =
   {!!}
+--    happly (Y-· ⊢M) 𝒞∅
+--  ∙ ap δ (ap (ℰ⟦ ⊢M ⟧ 𝒞∅) (happly (Y-· ⊢M) 𝒞∅) ∙ {!!})
+{-
+  happly (Y-δ ⊢M) 𝒞∅
+  ∙ ap (λ q → δ (q 𝒞∅))
+       (J (λ S eS → (⊢M¹ : ∅ ⊢ M ⦂ S ⇒ T)
+                  → (⊢M² : ∅ ⊢ M ⦂ S ⇒ S)
+                  → ℰ⟦ ⊢M ⊢· ⊢Y ⊢M ⟧ ＝ ℰ⟦ ⊢M¹ ⊢· ⊢Y ⊢M² ⟧)
+          (λ ⊢M¹ ⊢M² → ap² (λ x y → ℰ⟦ x ⊢· ⊢Y y ⟧)
+                            (is-prop-β ⊢-is-prop ⊢M ⊢M¹)
+                            (is-prop-β ⊢-is-prop ⊢M ⊢M²))
+          (fst $ ⇒-inj $ ⊢-unique ⊢M ⊢M₁)
+          ⊢M₁ ⊢M₂)
+-}          
 step-sound {T}       {.s¹} {.(𝓈 (＃ n))}            {.(＃ suc n)}       (β-𝓈 {n})                    (⊢𝓈 (⊢＃ {n}))         (⊢＃ {n = suc n})    = refl
 step-sound {T}       {.s¹} {.(𝓅 (＃ 0))}            {.(＃ 0)}           β-𝓅⁰                        (⊢𝓅 (⊢＃ {n = 0}))     (⊢＃ {n = 0})        = refl
 step-sound {T}       {.s¹} {.(𝓅 (＃ suc n))}        {.(＃ n)}           (β-𝓅ˢ {n})                  (⊢𝓅 (⊢＃ {n = suc n})) (⊢＃ {n})            = refl
@@ -267,4 +333,4 @@ soundness : ∀ {M N V k}
           → ℰ⟦ ⊢M ⟧ 𝒞∅ ＝ (iter k δ) (ℰ⟦ ⊢N ⟧ 𝒞∅)
 soundness {M} {N} {V} {k} iV M⇓ ⊢M ⊢N =
   rtc-sound (big→small-rtc-v {k = k} {M = M} iV M⇓) ⊢M ⊢N
-
+-}
