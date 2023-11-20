@@ -47,10 +47,10 @@ _⊛_ : ▹ ((a : A) → B a)
 ▹map² : {B C : 𝒰 ℓ} → (f : A → B → C) → ▹ A → ▹ B → ▹ C
 ▹map² f x y α = f (x α) (y α)
 
-▹-ext : ∀ {A : 𝒰} → {f g : ▹ A} → (▹[ α ] (f α ＝ g α)) → f ＝ g
+▹-ext : {f g : ▹ A} → (▹[ α ] (f α ＝ g α)) → f ＝ g
 ▹-ext eq i α = eq α i
 
-▹-ap : ∀ {A : 𝒰} → {f g : ▹ A} → f ＝ g → ▹[ α ] (f α ＝ g α)
+▹-ap : {f g : ▹ A} → f ＝ g → ▹[ α ] (f α ＝ g α)
 ▹-ap eq α i = eq i α
 
 -- These will compute only on diamond ticks.
@@ -66,6 +66,17 @@ fix f = f (dfix f)
 
 fix-path : (f : ▹ A → A) → fix f ＝ f (next (fix f))
 fix-path f i = f (pfix f i)
+
+-- A form of Banach's fixed point theorem
+dfix-unique : ∀ {f▹ : ▹ A → A} {x : ▹ A}
+            → x ＝ next (f▹ x)
+            → x ＝ dfix f▹
+dfix-unique {f▹} e = fix λ ih▹ → e ∙ ▹-ext (▹map (ap f▹) ih▹) ∙ sym (pfix f▹)
+
+fix-unique : ∀ {f▹ : ▹ A → A} {x : A}
+           → x ＝ f▹ (next x)
+           → x ＝ fix f▹
+fix-unique {f▹} e = fix λ ih▹ → e ∙ ap f▹ (▹-ext ih▹) ∙ sym (fix-path f▹)
 
 ▹Alg : 𝒰 ℓ → 𝒰 ℓ
 ▹Alg A = ▹ A → A

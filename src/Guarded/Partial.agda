@@ -91,6 +91,11 @@ mapᵖ-comp : {f : A → B} {g : B → C}
 mapᵖ-comp (now x)    = refl
 mapᵖ-comp (later p▹) = ap later (▹-ext λ α → mapᵖ-comp (p▹ α))
 
+δᵖ-mapᵖ : {f : A → B}
+        → (p : Part A)
+        → δᵖ (mapᵖ f p) ＝ mapᵖ f (δᵖ p)
+δᵖ-mapᵖ p = refl
+
 -- should be derivable?
 mapᵖ-bind : {f : A → B} {g : B → Part C}
           → (p : Part A)

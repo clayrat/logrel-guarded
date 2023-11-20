@@ -28,54 +28,37 @@ private variable
 
 𝒮 : (T : Ty) → (t : Term) → ∅ ⊢ t  ⦂ T → Part (TVal T)
 𝒮 (S ⇒ T) t ⊢t = Eval (S ⇒ T) t ⊢t
-𝒮  𝓝     t ⊢t = mapᵖ (λ n → ＃ n , v-＃ n , is-＃ {n} , ⊢＃) (ℰ⟦ ⊢t ⟧ 𝒞∅)
+𝒮  𝓝     t ⊢t = mapᵖ ℕVal (ℰ⟦ ⊢t ⟧ 𝒞∅)
 
-S-Eval : (T : Ty) → (t : Term) → (⊢t : ∅ ⊢ t  ⦂ T)
-       → 𝒮 T t ⊢t ＝ Eval T t ⊢t
-S-Eval (S ⇒ T) t ⊢t = refl
-S-Eval 𝓝 .(L · M) (_⊢·_ {L} {M} {A} tL tM) with (Eval (A ⇒ 𝓝) L tL)
-... | now (.(ƛ x ⦂ S ⇒ N) , .(v-ƛ _ _ _) , is-ƛ {x} {A = S} {t = N} , ⊢ƛ e tS) =
-   {!!} ∙ ap (λ q → later (q ⊛ next 𝓝 ⊛ next (N [ x := M ]) ⊛ next (subst-ty tM tS))) (sym $ pfix Φ)
-... | later x = ap later (▹-ext (λ α → {!let qq = !}))
-S-Eval 𝓝 .(Y M) (⊢Y {M} tM) =
-  {!!} ∙ ap (λ q → later (q ⊛ next 𝓝 ⊛ next (M · Y M) ⊛ next (tM ⊢· ⊢Y tM))) (sym $ pfix Φ)
-S-Eval 𝓝 .(＃ n) (⊢＃ {n}) = refl
-S-Eval 𝓝 .(𝓈 M) (⊢𝓈 {M} ⊢M) =
-  ap δᵖ (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)
-         ∙ ap (λ q → mapᵖ q (ℰ⟦ ⊢M ⟧ 𝒞∅))
+𝒮-Φ : ∀ {M}
+    → (⊢M : ∅ ⊢ M ⦂ T)
+    → Φ (next 𝒮) T M ⊢M ＝ 𝒮 T M ⊢M
+𝒮-Φ (⊢ƛ x tM) = refl
+𝒮-Φ (tM ⊢· tM₁) =
+  let qq = 𝒮-Φ tM in
+  {!!}
+𝒮-Φ {S ⇒ T} (⊢Y tM) = {!!}
+𝒮-Φ {(𝓝)} (⊢Y tM) = {!!}
+𝒮-Φ ⊢＃ = refl
+𝒮-Φ (⊢𝓈 tM) =
+  ap (δᵖ ∘ mapᵖ Φ-𝓈) (𝒮-Φ tM)
+  ∙ ap δᵖ (mapᵖ-comp (ℰ⟦ tM ⟧ 𝒞∅)
+           ∙ ap (λ q → mapᵖ q (ℰ⟦ tM ⟧ 𝒞∅))
               (fun-ext λ x → refl)
-         ∙ sym (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)))
-  ∙ ap (δᵖ ∘ mapᵖ Φ-𝓈) (S-Eval 𝓝 M ⊢M)
-S-Eval 𝓝 .(𝓅 M) (⊢𝓅 {M} ⊢M) =
-  ap δᵖ (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)
-         ∙ ap (λ q → mapᵖ q (ℰ⟦ ⊢M ⟧ 𝒞∅))
+           ∙ sym (mapᵖ-comp (ℰ⟦ tM ⟧ 𝒞∅)))
+𝒮-Φ (⊢𝓅 tM) =
+   ap (δᵖ ∘ mapᵖ Φ-𝓅) (𝒮-Φ tM)
+  ∙ ap δᵖ (mapᵖ-comp (ℰ⟦ tM ⟧ 𝒞∅)
+           ∙ ap (λ q → mapᵖ q (ℰ⟦ tM ⟧ 𝒞∅))
               (fun-ext λ x → refl)
-         ∙ sym (mapᵖ-comp (ℰ⟦ ⊢M ⟧ 𝒞∅)))
-  ∙ ap (δᵖ ∘ mapᵖ Φ-𝓅) (S-Eval 𝓝 M ⊢M)
-S-Eval 𝓝 .(?⁰ L ↑ M ↓ N) (⊢?⁰ {L} {M} {N} tL tM tN) =
-  let l1 = S-Eval 𝓝 L tL
-      m1 = S-Eval 𝓝 M tM
-      n1 = S-Eval 𝓝 N tN
-    in
+           ∙ sym (mapᵖ-comp (ℰ⟦ tM ⟧ 𝒞∅)))
+𝒮-Φ (⊢?⁰ tM tM₁ tM₂) =
+  let qq = 𝒮-Φ tM in
   {!!}
 
-{-
-Eval-sound : ∀ {k T M N V}
-          → (iV : IsVal N V)
-          → M ⇓⁅ k ⁆ᵛ V
-          → (⊢M : ∅ ⊢ M ⦂ T)
-          → (⊢N : ∅ ⊢ N ⦂ T)
-          → Eval T M ⊢M ＝ delay-by k (N , V , iV , ⊢N)
-Eval-sound is-ƛ (k0 , e) (⊢ƛ e₁ tM)      (⊢ƛ e₂ tN) = {!!}
-Eval-sound iV    M⇓      (tM ⊢· tM₁)      ⊢N        = {!!}
-Eval-sound iV    M⇓      (⊢Y tM)          ⊢N        = {!!}
-Eval-sound is-＃ (k0 , e)  ⊢＃             ⊢＃       = {!!}
-Eval-sound {(zero)} iV M⇓ (⊢𝓈 tM) ⊢N =
-  let qq = {!!}
-Eval-sound {suc k} iV M⇓ (⊢𝓈 tM) ⊢N = {!!}
-Eval-sound iV    M⇓      (⊢𝓅 tM)          ⊢N        = {!!}
-Eval-sound iV    M⇓      (⊢?⁰ tM tM₁ tM₂) ⊢N        = {!!}
--}
+S-Eval : 𝒮 ＝ Eval
+S-Eval = fix-unique {f▹ = Φ} (fun-ext λ T → fun-ext λ t → fun-ext λ tT → sym $ 𝒮-Φ tT)
+
 {-
 δ-comm : ∀ {k T}
         → (τ : 𝒯⟦ T ⟧)
@@ -258,7 +241,7 @@ step-sound {T}       {.s¹} {.(Y M)}                {.(M · Y M)}        (Ｙ {M
                             (is-prop-β ⊢-is-prop ⊢M ⊢M²))
           (fst $ ⇒-inj $ ⊢-unique ⊢M ⊢M₁)
           ⊢M₁ ⊢M₂)
--}          
+-}
 step-sound {T}       {.s¹} {.(𝓈 (＃ n))}            {.(＃ suc n)}       (β-𝓈 {n})                    (⊢𝓈 (⊢＃ {n}))         (⊢＃ {n = suc n})    = refl
 step-sound {T}       {.s¹} {.(𝓅 (＃ 0))}            {.(＃ 0)}           β-𝓅⁰                        (⊢𝓅 (⊢＃ {n = 0}))     (⊢＃ {n = 0})        = refl
 step-sound {T}       {.s¹} {.(𝓅 (＃ suc n))}        {.(＃ n)}           (β-𝓅ˢ {n})                  (⊢𝓅 (⊢＃ {n = suc n})) (⊢＃ {n})            = refl

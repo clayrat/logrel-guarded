@@ -37,26 +37,32 @@ private variable
 δᵖ-bind {k = s⁰} = refl
 δᵖ-bind {k = s¹} = refl
 
--- typed value
+-- typed value : `∅ ⊢ v ⦂ T`
 TVal : Ty → 𝒰
 TVal T = Σ[ q ꞉ Term ] (Σ[ v ꞉ Val ] (IsVal q v) × (∅ ⊢ q ⦂ T))
+
+ℕVal : ℕ → TVal 𝓝
+ℕVal n = ＃ n , v-＃ n , is-＃ {n} , ⊢＃
 
 -- Escardo'99 calls this a "contractive endomap of a suitable complete metric space"
 -- it's a guarded bigstep evaluator
 Φ-· : ▹ ((T : Ty) → (t : Term) → ∅ ⊢ t  ⦂ T → Part (TVal T))
-    → (A : Ty) → (T : Ty) → (M : Term) → (tM : ∅ ⊢ M ⦂ A)
+    → (A : Ty) → (T : Ty)
+    → (M : Term) → (tM : ∅ ⊢ M ⦂ A)
     → TVal (A ⇒ T) → Part (TVal T)
 Φ-· ih▹ A T M tM (.(ƛ x ⦂ S ⇒ N) , .(v-ƛ x S N) , is-ƛ {x} {A = S} {t = N} , ⊢ƛ e vt) =
   later (ih▹ ⊛ next T ⊛ next (N [ x := M ]) ⊛ next (subst-ty tM vt))
 
 Φ-𝓈 : TVal 𝓝 → TVal 𝓝
-Φ-𝓈 (.(＃ n) , .(v-＃ n) , is-＃ {n} , ⊢＃) = ＃ (suc n) , v-＃ (suc n) , is-＃ , ⊢＃
+Φ-𝓈 (.(＃ n) , .(v-＃ n) , is-＃ {n} , ⊢＃) = ℕVal (suc n)
 
 Φ-𝓅 : TVal 𝓝 → TVal 𝓝
-Φ-𝓅 (.(＃ n) , .(v-＃ n) , is-＃ {n} , ⊢＃) = ＃ (pred n) , v-＃ (pred n) , is-＃ , ⊢＃
+Φ-𝓅 (.(＃ n) , .(v-＃ n) , is-＃ {n} , ⊢＃) = ℕVal (pred n)
 
 Φ-? : ▹ ((T : Ty) → (t : Term) → ∅ ⊢ t  ⦂ T → Part (TVal T))
-    → (T : Ty) → (M : Term) → (tM : ∅ ⊢ M ⦂ T) → (N : Term) → (tN : ∅ ⊢ N ⦂ T)
+    → (T : Ty)
+    → (M : Term) → (tM : ∅ ⊢ M ⦂ T)
+    → (N : Term) → (tN : ∅ ⊢ N ⦂ T)
     → TVal 𝓝 → Part (TVal T)
 Φ-? ih▹ T M tM N tN (.(＃ zero)  , .(v-＃ zero)    , is-＃ {(zero)} , ⊢＃) =
   later (ih▹ ⊛ next T ⊛ next M ⊛ next tM)
@@ -89,7 +95,7 @@ Eval-· = Φ-· (dfix Φ)
 
 Eval-? : (T : Ty) → (M : Term) → (tM : ∅ ⊢ M ⦂ T) → (N : Term) → (tN : ∅ ⊢ N ⦂ T)
        → TVal 𝓝 → Part (TVal T)
-Eval-? = Φ-? (dfix Φ)        
+Eval-? = Φ-? (dfix Φ)
 
 Eval-val : ∀ {N V}
           → (iV : IsVal N V)
@@ -147,7 +153,7 @@ step-sound     (ξ-𝓅 {k} s) (⊢𝓅 ⊢M) (⊢𝓅 ⊢N) =
   ∙ sym (δᵖ-comm {k = k})
 step-sound {T} (ξ-? {L} {L′} {M} {N} {k} s) (⊢?⁰ ⊢L ⊢M ⊢N) (⊢?⁰ ⊢L′ ⊢M₁ ⊢N₁) =
   ap (_>>=ᵖ Eval-? T M ⊢M N ⊢N) (step-sound s ⊢L ⊢L′)
-  ∙ δᵖ-bind {k = k}  
+  ∙ δᵖ-bind {k = k}
   ∙ ap² (λ q w → (δᵖ ⁽ k ⁾) (Eval 𝓝 L′ ⊢L′ >>=ᵖ Eval-? T M q N w))
         (is-prop-β ⊢-is-prop ⊢M ⊢M₁)
         (is-prop-β ⊢-is-prop ⊢N ⊢N₁)
@@ -191,6 +197,29 @@ soundness {M} {k} iV M⇓ ⊢M ⊢N =
   rtc-sound (big→small-rtc-v {k = k} {M = M} iV M⇓) ⊢M ⊢N
   ∙ ap (iter k δᵖ) (Eval-val iV ⊢N)
 
+{-
+completeness-body : ▹ (∀ M k Q m N V iV
+                       → (⊢M : ∅ ⊢ M ⦂ T)
+                       → (⊢N : ∅ ⊢ N ⦂ T)
+                       → Q V m
+                       → Eval T M ⊢M ＝ delay-by (m + k) (N , V , iV , ⊢N)
+                       → M ⇓⁅ k ⁆ Q)
+                  → ∀ M k Q m N V iV
+                  → (⊢M : ∅ ⊢ M ⦂ T)
+                  → (⊢N : ∅ ⊢ N ⦂ T)
+                  → Q V m
+                  → Eval T M ⊢M ＝ delay-by (m + k) (N , V , iV , ⊢N)
+                  → M ⇓⁅ k ⁆ Q
+completeness-body ih▹ .(ƛ _ ⦂ _ ⇒ _) k Q m N V iV (⊢ƛ x₂ tM) ⊢N x x₁ = {!!}
+completeness-body ih▹ .(_ · _) k Q m N V iV (tM ⊢· tM₁) ⊢N x x₁ = {!!}
+completeness-body ih▹ .(Y _) k Q m N V iV (⊢Y tM) ⊢N x x₁ = {!!}
+completeness-body ih▹ .(＃ _) k Q m N V iV ⊢＃ ⊢N x x₁ = {!!}
+completeness-body ih▹ .(𝓈 M) k Q m .(＃ n) .(v-＃ n) (is-＃ {n}) (⊢𝓈 {M = M} tM) ⊢N x x₁ =
+  completeness-body ih▹ M k (Q𝓈 Q) (suc m) (＃ n) (v-＃ n) (is-＃ {n}) tM ⊢N {!!} {!!}
+completeness-body ih▹ .(𝓅 _) k Q m N V iV (⊢𝓅 tM) ⊢N x x₁ = {!!}
+completeness-body ih▹ .(?⁰ _ ↑ _ ↓ _) k Q m N V iV (⊢?⁰ tM tM₁ tM₂) ⊢N x x₁ = {!!}
+-}
+{-
 rtc0-complete : ∀ {M N V}
              → (iV : IsVal N V)
              → (⊢M : ∅ ⊢ M ⦂ T)
@@ -229,7 +258,6 @@ rtc-complete-v {k = suc k} iV (⊢𝓈 tM) ⊢N eq = {!!}
 rtc-complete-v {k = suc k} iV (⊢𝓅 tM) ⊢N eq = {!!}
 rtc-complete-v {k = suc k} iV (⊢?⁰ tM tM₁ tM₂) ⊢N eq = {!!}
 
-{-
 completeness-body : ∀ {N V}
                   → (iV : IsVal N V)
                   → (⊢N : ∅ ⊢ N ⦂ T)
@@ -250,7 +278,7 @@ completeness-body iV ⊢N ih▹ .(＃ _) (suc k) ⊢＃ eq = {!!}
 completeness-body iV ⊢N ih▹ .(𝓈 M) zero (⊢𝓈 {M = M} tM) eq = {!!}
 completeness-body iV ⊢N ih▹ .(𝓈 M) (suc k) (⊢𝓈 {M = M} tM) eq =
   let qq = completeness-body iV ⊢N ih▹ M k tM {!!} in
-  {!!} 
+  {!!}
 completeness-body iV ⊢N ih▹ .(𝓅 _) k (⊢𝓅 tM) eq = {!!}
 completeness-body iV ⊢N ih▹ .(?⁰ _ ↑ _ ↓ _) k (⊢?⁰ tM tM₁ tM₂) eq = {!!}
 
