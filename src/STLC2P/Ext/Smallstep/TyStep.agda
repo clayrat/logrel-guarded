@@ -21,11 +21,11 @@ subst-ty {Γ} {x = y}     ⊢V (⊢` {x} here) with x ≟ y
 ... | yes _   = weaken-∅ Γ ⊢V
 ... | no  x≠y = absurd (x≠y refl)
 subst-ty {x = y}         ⊢V (⊢` {x} (there x≠y ∋x)) with x ≟ y
-... | yes eq  = absurd (x≠y eq)
+... | yes e  = absurd (x≠y e)
 ... | no  _   = ⊢` ∋x
 subst-ty {Γ} {x = y} {A} ⊢V (⊢ƛ {x} {N} {A = C} {B} ⊢N) with x ≟ y
-... | yes eq  = ⊢ƛ (drop (subst (λ n → Γ , n ⦂ A , x ⦂ C ⊢ N ⦂ B) (sym eq) ⊢N))
-... | no  x≠y = ⊢ƛ (subst-ty ⊢V (swap x≠y ⊢N))
+... | yes e  = ⊢ƛ (dropᵧ (subst (λ n → Γ , n ⦂ A , x ⦂ C ⊢ N ⦂ B) (sym e) ⊢N))
+... | no  x≠y = ⊢ƛ (subst-ty ⊢V (swapᵧ x≠y ⊢N))
 subst-ty                 ⊢V (⊢L ⊢· ⊢M)     = (subst-ty ⊢V ⊢L) ⊢· (subst-ty ⊢V ⊢M)
 subst-ty                 ⊢V  ⊢𝓉             = ⊢𝓉
 subst-ty                 ⊢V  ⊢𝒻            = ⊢𝒻

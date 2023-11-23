@@ -1,7 +1,7 @@
 module Interlude where
 
 open import Prelude
-open import Correspondences.Base using (Corr¹ ; Corr²)
+open import Meta.Variadic
 open import Data.Empty
 open import Data.Bool
 open import Data.Dec renaming (rec to recᵈ)
@@ -47,13 +47,13 @@ A ↔ B = (A → B) × (B → A)
 -- relation properties
 
 𝒫 : 𝒰 ℓ → 𝒰 (ℓsuc ℓ)
-𝒫 {ℓ} X = Corr¹ ℓ X
+𝒫 {ℓ} X = Corr¹ X ℓ
 
 _∈ₚ_ : A → 𝒫 A → 𝒰 (level-of-type A)
 x ∈ₚ P = P x
 
 ℛ : 𝒰 ℓ → 𝒰 (ℓsuc ℓ)
-ℛ {ℓ} X = Corr² ℓ (X , X)
+ℛ {ℓ} X = Corr² (X , X) ℓ
 
 normal-form : ℛ A → A → 𝒰 (level-of-type A)
 normal-form {A} R x = ¬ Σ[ x′ ꞉ A ] (R x x′)

@@ -2,7 +2,7 @@ name: logrel-gr
 include:
   src
 depend:
-  cubical-mini-0.3
+  cubical-mini
 flags:
   --erased-cubical
   --erasure

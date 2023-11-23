@@ -170,15 +170,15 @@ weaken {t = .(_ ⇀₂)}        {T}        sub  (⊢⇀₂ {A} ⊢L)          =
 weaken-∅ : ∀ {t T} Γ → ∅ ⊢ t ⦂ T → Γ ⊢ t ⦂ T
 weaken-∅ Γ H0 = weaken ⊆-∅ H0
 
-drop : ∀ {Γ x M A B C}
+dropᵧ : ∀ {Γ x M A B C}
   → Γ , x ⦂ A , x ⦂ B ⊢ M ⦂ C
     --------------------------
   → Γ , x ⦂ B ⊢ M ⦂ C
-drop {Γ} {x} {M} {A} {B} {C} ⊢M = weaken ⊆-shadow ⊢M
+dropᵧ {Γ} {x} {M} {A} {B} {C} ⊢M = weaken ⊆-shadow ⊢M
 
-swap : ∀ {Γ x y M A B C}
+swapᵧ : ∀ {Γ x y M A B C}
   → x ≠ y
   → Γ , y ⦂ B , x ⦂ A ⊢ M ⦂ C
     --------------------------
   → Γ , x ⦂ A , y ⦂ B ⊢ M ⦂ C
-swap {Γ} {x} {y} {M} {A} {B} {C} x≠y ⊢M = weaken (⊆-exch x≠y) ⊢M
+swapᵧ {Γ} {x} {y} {M} {A} {B} {C} x≠y ⊢M = weaken (⊆-exch x≠y) ⊢M

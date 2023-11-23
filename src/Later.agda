@@ -47,11 +47,21 @@ _⊛_ : ▹ ((a : A) → B a)
 ▹map² : {B C : 𝒰 ℓ} → (f : A → B → C) → ▹ A → ▹ B → ▹ C
 ▹map² f x y α = f (x α) (y α)
 
-▹-ext : {f g : ▹ A} → (▹[ α ] (f α ＝ g α)) → f ＝ g
-▹-ext eq i α = eq α i
+▹-ext : {x▹ y▹ : ▹ A} → (▹[ α ] (x▹ α ＝ y▹ α)) → x▹ ＝ y▹
+▹-ext e i α = e α i
 
-▹-ap : {f g : ▹ A} → f ＝ g → ▹[ α ] (f α ＝ g α)
-▹-ap eq α i = eq i α
+▹-ap : {x▹ y▹ : ▹ A} → x▹ ＝ y▹ → ▹[ α ] (x▹ α ＝ y▹ α)
+▹-ap e α i = e i α
+
+▹-extP : {P : I → ▹ 𝒰 ℓ} {x▹ : ▹[ α ] P i0 α} {y▹ : ▹[ α ] P i1 α}
+     → (▹[ α ] ＜ (x▹ α) ／ (λ i → P i α) ＼ (y▹ α) ＞)
+     → ＜ x▹ ／ (λ i → ▹[ α ] P i α) ＼ y▹ ＞
+▹-extP e i α = e α i
+
+▹-apP : {P : I → ▹ 𝒰 ℓ} {x▹ : ▹[ α ] P i0 α} {y▹ : ▹[ α ] P i1 α}
+     → ＜ x▹ ／ (λ i → ▹[ α ] P i α) ＼ y▹ ＞
+     → (▹[ α ] ＜ (x▹ α) ／ (λ i → P i α) ＼ (y▹ α) ＞)
+▹-apP e α i = e i α
 
 -- These will compute only on diamond ticks.
 postulate
@@ -80,3 +90,4 @@ fix-unique {f▹} e = fix λ ih▹ → e ∙ ap f▹ (▹-ext ih▹) ∙ sym (fi
 
 ▹Alg : 𝒰 ℓ → 𝒰 ℓ
 ▹Alg A = ▹ A → A
+

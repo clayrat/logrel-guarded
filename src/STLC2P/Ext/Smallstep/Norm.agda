@@ -88,11 +88,11 @@ instantiation-domains-match : ∀ {c e}
                             → ∀ {x T}
                             → lup x c ＝ just T
                             → Σ[ t ꞉ Term ] (lup x e ＝ just t)
-instantiation-domains-match  V-nil                         eq =
-  absurd (nothing≠just eq)
-instantiation-domains-match (V-cons {x = y} {v} V r i) {x} eq with x ≟ y
+instantiation-domains-match  V-nil                         e =
+  absurd (nothing≠just e)
+instantiation-domains-match (V-cons {x = y} {v} V r i) {x} e with x ≟ y
 ... | yes prf = v , refl
-... | no ctra = instantiation-domains-match i eq
+... | no ctra = instantiation-domains-match i e
 
 instantiation-env-closed : ∀ {c e}
                          → Inst c e

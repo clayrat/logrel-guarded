@@ -76,7 +76,7 @@ ifz^ x y = (ifz x y) ^
 Y-δ : ∀ {t}
     → (⊢t : Γ ⊢ t ⦂ T ⇒ T)
     → ℰ⟦ ⊢Y ⊢t ⟧ ＝ δ ∘ ℰ⟦ ⊢t ⊢· (⊢Y ⊢t) ⟧
-Y-δ ⊢t = fun-ext λ γ → fix-path (λ ta▹ → θ (▹map (ℰ⟦ ⊢t ⟧ γ) ta▹))
+Y-δ ⊢t = fun-ext λ γ → fix-path (θ ∘ ▹map (ℰ⟦ ⊢t ⟧ γ))
 
 -- 2.16
 
