@@ -3,7 +3,7 @@ module PCF.Ext.TyTerm where
 open import Prelude
 open import Data.Empty
 open import Data.Unit
-open import Data.Nat hiding (_·_)
+open import Data.Nat hiding (_·_; Code; code-refl; decode; identity-system; code-is-prop)
 open import Data.String
 open import Structures.IdentitySystem
 open import Meta.Search.HLevel
@@ -186,11 +186,10 @@ module Term-path-code where
   Term-identity-system : is-identity-system Code code-refl
   Term-identity-system = set-identity-system code-is-prop decode
 
-instance
-  Term-is-set : is-set Term
-  Term-is-set = identity-system→is-of-hlevel 1
-                  Term-path-code.Term-identity-system
-                  Term-path-code.code-is-prop
+Term-is-set : is-set Term
+Term-is-set = identity-system→is-of-hlevel 1
+                Term-path-code.Term-identity-system
+                Term-path-code.code-is-prop
 
 Term-is-of-hlevel : (n : HLevel) → is-of-hlevel (2 + n) Term
 Term-is-of-hlevel n = is-of-hlevel-+-left 2 n Term-is-set
