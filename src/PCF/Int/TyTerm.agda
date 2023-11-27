@@ -103,7 +103,7 @@ data _⊢_ : {@0 n : ℕ} → Ctx n → Ty → 𝒰 where
 
   -- constant
   ＃_ : ∀ {@0 n} {Γ : Ctx n}
-      → (n : ℕ)
+      → ℕ
         -------
       → Γ ⊢ 𝓝
 
@@ -189,10 +189,10 @@ extend-with : ∀ {@0 m n} {Γ : Ctx m} {Δ : Ctx n} {A : Ty}
 extend-with N f  here       = N
 extend-with N f (there x∋) = f x∋
 
-replace-first : ∀ {@0 m n} {Γ : Ctx m} {Δ : Ctx n} {A : Ty}
+replace-first : ∀ {@0 n} {Γ : Ctx n} {A : Ty}
               → Γ ⊢ A
                 -------------
-              → Sub (A ∷ Γ) (Γ)
+              → Sub (A ∷ Γ) Γ
 replace-first N  here       = N
 replace-first N (there x∋) = ` x∋
 
@@ -201,4 +201,4 @@ _[_] : ∀ {@0 n} {Γ : Ctx n} {A B : Ty}
       → Γ ⊢ A
       --------------
       → Γ ⊢ B
-_[_] {Γ} M N = sub (replace-first {Δ = Γ} N) M
+M [ N ] = sub (replace-first N) M
