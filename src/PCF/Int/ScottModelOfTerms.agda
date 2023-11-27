@@ -8,6 +8,8 @@ open import Data.Vec
 
 open import Later
 open import Guarded.Partial
+
+open import PCF.Ty
 open import PCF.Int.TyTerm
 open import PCF.Int.ScottModelOfTypes
 open import PCF.Int.ScottModelOfContexts

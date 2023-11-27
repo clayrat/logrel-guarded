@@ -155,14 +155,6 @@ msubst-closed c []            = refl
 msubst-closed c ((y , N) ∷ E) =
   ap (msubst E) (subst-closed c y N) ∙ msubst-closed c E
 
-{-
-msubst-closed-env : ∀ {E M}
-              → closed-env E
-              → closed (msubst E M)
-msubst-closed-env {E = []}          = {!!}
-msubst-closed-env {E = (y , N) ∷ E} = {!!}
--}
-
 subst-msubst : ∀ {E V}
              → closed V → closed-env E
              → ∀ x T

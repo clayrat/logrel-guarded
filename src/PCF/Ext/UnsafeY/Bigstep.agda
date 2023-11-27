@@ -14,12 +14,14 @@ open import PCF.Ext.Subst
 
 Q𝓈 : (Val → ℕ → 𝒰)
    → Val → ℕ → 𝒰
-Q𝓈 Q v l = Σ[ n ꞉ ℕ ] (v ＝ v-＃ n) × Q (v-＃ (suc n)) l
+Q𝓈 Q (v-＃ n)    l = Q (v-＃ (suc n)) l
+Q𝓈 Q (v-ƛ _ _ _) _ = ⊥
 
 -- thesis 2.3.1 says this should guard against n=0 but then it's inconsistent with small-step
 Q𝓅 : (Val → ℕ → 𝒰)
    → Val → ℕ → 𝒰
-Q𝓅 Q v l = Σ[ n ꞉ ℕ ] (v ＝ v-＃ n) × Q (v-＃ (pred n)) l
+Q𝓅 Q (v-＃ n)    l = Q (v-＃ (pred n)) l
+Q𝓅 Q (v-ƛ _ _ _) l = ⊥
 
 -- problematic cases for termination are app+if
 {-# TERMINATING #-}
@@ -37,7 +39,7 @@ mutual
 
   Q· : Term → (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
   Q· s Q (v-ƛ x A t) m = (t [ x := s ]) ⇓⁅ m ⁆ Q
-  Q· s Q (v-＃ _)  _ = ⊥
+  Q· s Q (v-＃ _)    _ = ⊥
 
   Q? : Term → Term → (Val → ℕ → 𝒰) → Val → ℕ → 𝒰
   Q? s t Q (v-＃  zero)   m = s ⇓⁅ m ⁆ Q

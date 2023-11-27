@@ -13,6 +13,8 @@ open import Data.String
 open import Later
 open import Interlude
 open import Guarded.Partial
+
+open import PCF.Ty
 open import PCF.Ext.TyTerm
 open import PCF.Ext.Subst
 open import PCF.Ext.TyDeriv
@@ -194,7 +196,8 @@ Inst-R     (I-cons {x = y}         τ c R I) (there {x} ne ix) with (x ≟ y)
 𝓡𝓝𝓈 = fix λ ih▹ → λ where
   (now v) M RT →
     ⇓-covariant (λ w l → (l ＝ 0) × (w ＝ v-＃ v)) (Q𝓈 (λ w l → (l ＝ 0) × (w ＝ v-＃ (suc v))))
-                (λ w n e → v , snd e , fst e , refl)
+                (λ w n e →
+                     subst (λ q → Q𝓈 (λ w₁ l → (l ＝ 0) × (w₁ ＝ v-＃ (suc v))) q n) (sym (snd e)) (fst e , refl)) 
                 M 0 RT
   (later r▹) M RT →
      let (M′ , M″ , S1 , S2 , S▹) = 𝓡𝓝-later⇉ RT in
@@ -205,7 +208,8 @@ Inst-R     (I-cons {x = y}         τ c R I) (there {x} ne ix) with (x ≟ y)
 𝓡𝓝𝓅 = fix λ ih▹ → λ where
   (now v) M RT →
     ⇓-covariant (λ w l → (l ＝ 0) × (w ＝ v-＃ v)) (Q𝓅 (λ w l → (l ＝ 0) × (w ＝ v-＃ (pred v))))
-                (λ w n e → v , snd e , fst e , refl)
+                (λ w n e →
+                     subst (λ q → Q𝓅 (λ w₁ l → (l ＝ 0) × (w₁ ＝ v-＃ (pred v))) q n) (sym (snd e)) (fst e , refl))
                 M 0 RT
   (later r▹) M RT →
      let (M′ , M″ , S1 , S2 , S▹) = 𝓡𝓝-later⇉ RT in

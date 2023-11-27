@@ -9,6 +9,7 @@ open import Data.List
 open import Structures.IdentitySystem hiding (J)
 
 open import Interlude
+open import PCF.Ty
 open import PCF.Ext.TyTerm
 open import PCF.Ext.Subst
 
@@ -219,11 +220,11 @@ weaken {t = ?⁰ L ↑ M ↓ N}              sub (⊢?⁰ {L} {M} {N} ⊢L ⊢M 
 weaken-∅ : ∀ {t T} Γ → ∅ ⊢ t ⦂ T → Γ ⊢ t ⦂ T
 weaken-∅ Γ H0 = weaken ⊆-∅ H0
 
-drop : ∀ {Γ x M A B C}
+dropᵧ : ∀ {Γ x M A B C}
   → Γ , x ⦂ A , x ⦂ B ⊢ M ⦂ C
     --------------------------
   → Γ , x ⦂ B ⊢ M ⦂ C
-drop {Γ} {x} {M} {A} {B} {C} ⊢M = weaken ⊆-shadow ⊢M
+dropᵧ {Γ} {x} {M} {A} {B} {C} ⊢M = weaken ⊆-shadow ⊢M
 
 swap : ∀ {Γ x y M A B C}
   → x ≠ y
@@ -251,7 +252,7 @@ subst-ty {Γ} {x = y} {V}      {B} ⊢V (⊢` {x} (there ne ix)) =
         (x ≟ y)
 subst-ty {Γ} {x = y} {V} {A}      ⊢V (⊢ƛ {x} {N} {A = A⁰} {B} {T} e ⊢N) =
   elimᵈ {C = λ q → Γ ⊢ recᵈ (λ _ → ƛ x ⦂ T ⇒ N) (λ _ → ƛ x ⦂ T ⇒ N [ y := V ]) q ⦂ A⁰ ⇒ B}
-        (λ prf  → ⊢ƛ e (drop (subst (λ q → Γ , q ⦂ A , x ⦂ A⁰ ⊢ N ⦂ B) (sym prf) ⊢N)))
+        (λ prf  → ⊢ƛ e (dropᵧ (subst (λ q → Γ , q ⦂ A , x ⦂ A⁰ ⊢ N ⦂ B) (sym prf) ⊢N)))
         (λ ctra → ⊢ƛ e (subst-ty ⊢V (swap ctra ⊢N)))
         (x ≟ y)
 subst-ty                          ⊢V (⊢M ⊢· ⊢N)           = (subst-ty ⊢V ⊢M) ⊢· (subst-ty ⊢V ⊢N)

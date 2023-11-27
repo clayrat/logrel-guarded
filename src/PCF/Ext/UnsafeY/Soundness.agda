@@ -11,6 +11,8 @@ open import Data.String
 open import Later
 open import Interlude
 open import Guarded.Partial
+
+open import PCF.Ty
 open import PCF.Ext.TyTerm
 open import PCF.Ext.Subst
 open import PCF.Ext.TyDeriv
@@ -48,8 +50,8 @@ private variable
        → (⊢N : Γ ⊢ N ⦂ T)
        → (ℰ⟦ ⊢L ⟧ γ ＝ (δ ⁽ k ⁾) (ℰ⟦ ⊢L′ ⟧ γ))
        → ℰ⟦ ⊢?⁰ ⊢L ⊢M ⊢N ⟧ γ ＝ (δ ⁽ k ⁾) (ℰ⟦ ⊢?⁰ ⊢L′ ⊢M ⊢N ⟧ γ)
-δ-ifz {γ} {k = s⁰} ⊢L ⊢L′ ⊢M ⊢N eq = ap (ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ)) eq
-δ-ifz     {k = s¹} ⊢L ⊢L′ ⊢M ⊢N eq = ifz-δ ⊢L ⊢L′ ⊢M ⊢N eq
+δ-ifz {γ} {k = s⁰} ⊢L ⊢L′ ⊢M ⊢N e = ap (ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ)) e
+δ-ifz     {k = s¹} ⊢L ⊢L′ ⊢M ⊢N e = ifz-δ ⊢L ⊢L′ ⊢M ⊢N e
 
 -- 2.17 (simplified for Δ = ∅ and a single substitution)
 
@@ -145,9 +147,9 @@ subst-lemma {x = y} {S} {Γ} 𝒞Γ ⊢N (⊢ƛ {x} {N} {A} {B} e ⊢M) with x �
 ... | yes prf =
         fun-ext λ ta →
           J (λ y₁ ey → (⊢M₁ : Γ , y₁ ⦂ S , x ⦂ A ⊢ N ⦂ B)
-                      → ℰ⟦ drop (subst (λ q → (Γ , q ⦂ S , x ⦂ A) ⊢ N ⦂ B) (sym ey) ⊢M₁) ⟧ (𝒞Γ ＆ ta)
+                      → ℰ⟦ dropᵧ (subst (λ q → (Γ , q ⦂ S , x ⦂ A) ⊢ N ⦂ B) (sym ey) ⊢M₁) ⟧ (𝒞Γ ＆ ta)
                       ＝ ℰ⟦ ⊢M₁ ⟧ ((𝒞Γ ＆ ℰ⟦ ⊢N ⟧ 𝒞∅) ＆ ta))
-            (λ ⊢M₁ →   ap (λ q → ℰ⟦ drop q ⟧ (𝒞Γ ＆ ta))
+            (λ ⊢M₁ →   ap (λ q → ℰ⟦ dropᵧ q ⟧ (𝒞Γ ＆ ta))
                            (subst-refl {B = λ q → (Γ , q ⦂ S , x ⦂ A) ⊢ N ⦂ B} ⊢M₁)
                       ∙ weaken-lemma ⊆-shadow (𝒞Γ ＆ ta) ⊢M₁
                       ∙ ap (ℰ⟦ ⊢M₁ ⟧) (weaken-𝒞-shadow 𝒞Γ ta (ℰ⟦ ⊢N ⟧ 𝒞∅)))

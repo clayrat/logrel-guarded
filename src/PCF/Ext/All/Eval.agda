@@ -11,6 +11,8 @@ open import Data.String
 open import Later
 open import Interlude
 open import Guarded.Partial
+
+open import PCF.Ty
 open import PCF.Ext.TyTerm
 open import PCF.Ext.Subst
 open import PCF.Ext.TyDeriv

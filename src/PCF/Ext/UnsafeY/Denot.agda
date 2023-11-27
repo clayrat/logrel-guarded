@@ -8,10 +8,13 @@ open import Data.Nat
 open import Later
 open import Interlude
 open import Guarded.Partial
+open import PCF.Ty
 open import PCF.Ext.TyTerm
 open import PCF.Ext.TyDeriv
 
 private variable
+  ℓ : Level
+  A : 𝒰 ℓ
   Γ Δ : Ctx
   T : Ty
 
@@ -27,15 +30,13 @@ private variable
 δ : 𝒯⟦ T ⟧ → 𝒯⟦ T ⟧
 δ = θ ∘ next
 
-^-body : ∀ {A}
-       → (A → 𝒯⟦ T ⟧)
+^-body : (A → 𝒯⟦ T ⟧)
        → ▹ (Part A → 𝒯⟦ T ⟧)
        → Part A → 𝒯⟦ T ⟧
 ^-body f f^▹ (now x)    = f x
 ^-body f f^▹ (later p▹) = θ (f^▹ ⊛ p▹)
 
-_^ : ∀ {A}
-   → (A → 𝒯⟦ T ⟧)
+_^ : (A → 𝒯⟦ T ⟧)
    → Part A → 𝒯⟦ T ⟧
 (f ^) = fix (^-body f)
 
@@ -87,11 +88,11 @@ ifz-δ : ∀ {L L′ M N γ}
        → (⊢N : Γ ⊢ N ⦂ T)
        → (ℰ⟦ ⊢L ⟧ γ ＝ δ (ℰ⟦ ⊢L′ ⟧ γ))
        → ℰ⟦ ⊢?⁰ ⊢L ⊢M ⊢N ⟧ γ ＝ δ (ℰ⟦ ⊢?⁰ ⊢L′ ⊢M ⊢N ⟧ γ)
-ifz-δ {γ} ⊢L ⊢L′ ⊢M ⊢N eq =
+ifz-δ {γ} ⊢L ⊢L′ ⊢M ⊢N e =
   (ℰ⟦ ⊢?⁰ ⊢L ⊢M ⊢N ⟧ γ)
     ＝⟨⟩
   ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ) (ℰ⟦ ⊢L ⟧ γ)
-    ＝⟨ ap (ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ)) eq ⟩
+    ＝⟨ ap (ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ)) e ⟩
   ifz^ (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ) (δ (ℰ⟦ ⊢L′ ⟧ γ))
     ＝⟨⟩
   θ (dfix (^-body (ifz (ℰ⟦ ⊢M ⟧ γ) (ℰ⟦ ⊢N ⟧ γ))) ⊛ next (ℰ⟦ ⊢L′ ⟧ γ))

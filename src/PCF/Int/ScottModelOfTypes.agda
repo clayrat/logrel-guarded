@@ -6,6 +6,8 @@ open import Data.Nat
 
 open import Later
 open import Guarded.Partial
+
+open import PCF.Ty
 open import PCF.Int.TyTerm
 
 private variable

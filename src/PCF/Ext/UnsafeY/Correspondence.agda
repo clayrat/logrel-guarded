@@ -23,11 +23,11 @@ small⁰-big : {k : ℕ} (M N : Term) (Q : Val → ℕ → 𝒰)
 small⁰-big .((ƛ x ⦂ A ⇒ M) · N)   .(M [ x := N ])  Q (β-ƛ {x} {M} {N} {A})     N⇓ =
   N⇓
 small⁰-big .(𝓈 (＃ n))            .(＃ (suc n))    Q (β-𝓈 {n})                N⇓ =
-  n , refl , N⇓
+  N⇓
 small⁰-big .(𝓅 (＃ 0))            .(＃ 0)          Q  β-𝓅⁰                    N⇓ =
-  0 , refl , N⇓
+  N⇓
 small⁰-big .(𝓅 (＃ suc n))        .(＃ n)          Q (β-𝓅ˢ {n})               N⇓ =
-  suc n , refl , N⇓
+  N⇓
 small⁰-big .(?⁰ ＃ 0 ↑ M ↓ N)      M               Q (β-?⁰ {M} {N})           N⇓ =
   N⇓
 small⁰-big .(?⁰ ＃ suc n ↑ M ↓ N)  N               Q (β-?ˢ {M} {N} {n})       N⇓ =
@@ -182,12 +182,12 @@ inter-big-comp {k = suc k} M Q (inr (R , S , LR , RS , SQ▹)) =
 Q𝓈-covariant : (Q R : Val → ℕ → 𝒰)
              → (∀ v n → Q v n → R v n)
              → ∀ v n → Q𝓈 Q v n → Q𝓈 R v n
-Q𝓈-covariant Q R qr v n (x , e , qx) = x , e , qr (v-＃ (suc x)) n qx
+Q𝓈-covariant Q R qr (v-＃ x) = qr (v-＃ (suc x))
 
 Q𝓅-covariant : (Q R : Val → ℕ → 𝒰)
              → (∀ v n → Q v n → R v n)
              → ∀ v n → Q𝓅 Q v n → Q𝓅 R v n
-Q𝓅-covariant Q R qr v n (x , e , qx) = x , e , qr (v-＃ (pred x)) n qx
+Q𝓅-covariant Q R qr (v-＃ x) = qr (v-＃ (pred x))
 
 -- substitution is problematic
 {-# TERMINATING #-}
@@ -322,10 +322,7 @@ big→inter {k} (𝓈 t)          Q M⇓ =
   Q₂ (v-ƛ _ _ _) m = ⊥
 
   Q𝓈₂-impl : ∀ v s → Q𝓈 Q v s → Q₂ v s
-  Q𝓈₂-impl (v-＃ x)  s (n , e , q) =
-    big→inter (＃ suc x) Q (subst (λ q → Q (v-＃ (suc q)) s) (sym (v-＃-inj e)) q)
-  Q𝓈₂-impl (v-ƛ x A t) s (n , e , q) =
-    absurd (v-＃≠v-ƛ (sym e))
+  Q𝓈₂-impl (v-＃ x) s = big→inter (＃ suc x) Q
 
   Q₃ : Val → ℕ → 𝒰
   Q₃ (v-＃ n)  m = (𝓈 (＃ n)) ⇛⁅ m ⁆ Qᵀ Q
@@ -373,10 +370,7 @@ big→inter {k}     (𝓅 t)          Q M⇓ =
   Q₂ (v-ƛ _ _ _) m = ⊥
 
   Q𝓅₂-impl : ∀ v s → Q𝓅 Q v s → Q₂ v s
-  Q𝓅₂-impl (v-＃ x)  s (n , e , q) =
-    big→inter (＃ pred x) Q (subst (λ q → Q (v-＃ (pred q)) s) (sym (v-＃-inj e)) q)
-  Q𝓅₂-impl (v-ƛ x A t) s (n , e , q) =
-    absurd (v-＃≠v-ƛ (sym e))
+  Q𝓅₂-impl (v-＃ x)  s = big→inter (＃ pred x) Q 
 
   Q₃ : Val → ℕ → 𝒰
   Q₃ (v-＃ n)  m = (𝓅 (＃ n)) ⇛⁅ m ⁆ Qᵀ Q

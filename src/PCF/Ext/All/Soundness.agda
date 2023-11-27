@@ -11,6 +11,8 @@ open import Data.String
 open import Later
 open import Interlude
 open import Guarded.Partial
+
+open import PCF.Ty
 open import PCF.Ext.TyTerm
 open import PCF.Ext.Subst
 open import PCF.Ext.TyDeriv
@@ -30,6 +32,37 @@ private variable
 𝒮 (S ⇒ T) t ⊢t = Eval (S ⇒ T) t ⊢t
 𝒮  𝓝     t ⊢t = mapᵖ ℕVal (ℰ⟦ ⊢t ⟧ 𝒞∅)
 
+𝒮-Φ-body : ▹ ((T : Ty) → (M : Term) → (⊢M : ∅ ⊢ M ⦂ T)
+               → Φ (next 𝒮) T M ⊢M ＝ 𝒮 T M ⊢M)
+         → (T : Ty) → (M : Term) → (⊢M : ∅ ⊢ M ⦂ T)
+         → Φ (next 𝒮) T M ⊢M ＝ 𝒮 T M ⊢M
+𝒮-Φ-body ih▹ .(_ ⇒ _) .(ƛ _ ⦂ _ ⇒ _) (⊢ƛ x tM) = refl
+𝒮-Φ-body ih▹ T .(_ · _) (tM ⊢· tM₁) =
+  {!!}
+𝒮-Φ-body ih▹ T .(Y M) (⊢Y {M} tM) =
+  let qq = ih▹ ⊛ next T ⊛ next (M · Y M) ⊛ next (tM ⊢· ⊢Y tM) in
+  ap later (▹-ext λ α → sym (qq α)) ∙ go
+  where
+  go : δᵖ (Φ (next 𝒮) T (M · Y M) (tM ⊢· ⊢Y tM)) ＝ 𝒮 T (Y M) (⊢Y tM)
+  go with (Φ (next 𝒮) (T ⇒ T) M tM)
+  ... | now (.(ƛ _ ⦂ _ ⇒ _) , .(v-ƛ _ _ _) , (is-ƛ {x} {A} {t}) , ⊢ƛ e tm) =
+          let ww = ih▹ ⊛ next T ⊛ next (t [ x := Y M ]) ⊛ next (subst-ty (⊢Y tM) tm) in
+          {!!}
+  ... | later p▹ = {!!}
+  zz : Φ (next 𝒮) (T ⇒ T) M tM ＝ 𝒮 (T ⇒ T) M tM
+  zz = 𝒮-Φ-body ih▹ (T ⇒ T) M tM
+
+𝒮-Φ-body ih▹ .𝓝 .(＃ _) ⊢＃ = refl
+𝒮-Φ-body ih▹ .𝓝 .(𝓈 M) (⊢𝓈 {M} tM) =
+  ap (δᵖ ∘ mapᵖ Φ-𝓈) (𝒮-Φ-body ih▹ 𝓝 M tM)
+  ∙ ap δᵖ (mapᵖ-comp (ℰ⟦ tM ⟧ 𝒞∅)
+           ∙ ap (λ q → mapᵖ q (ℰ⟦ tM ⟧ 𝒞∅))
+              (fun-ext λ x → refl)
+           ∙ sym (mapᵖ-comp (ℰ⟦ tM ⟧ 𝒞∅)))
+𝒮-Φ-body ih▹ .𝓝 .(𝓅 _) (⊢𝓅 tM) = {!!}
+𝒮-Φ-body ih▹ T .(?⁰ _ ↑ _ ↓ _) (⊢?⁰ tM tM₁ tM₂) = {!!}
+
+{-
 𝒮-Φ : ∀ {M}
     → (⊢M : ∅ ⊢ M ⦂ T)
     → Φ (next 𝒮) T M ⊢M ＝ 𝒮 T M ⊢M
@@ -37,8 +70,10 @@ private variable
 𝒮-Φ (tM ⊢· tM₁) =
   let qq = 𝒮-Φ tM in
   {!!}
-𝒮-Φ {S ⇒ T} (⊢Y tM) = {!!}
-𝒮-Φ {(𝓝)} (⊢Y tM) = {!!}
+𝒮-Φ (⊢Y tM) =
+  let qq = 𝒮-Φ (tM ⊢· ⊢Y tM) in
+  ap δᵖ (sym qq) ∙ {!!}
+  {!!}
 𝒮-Φ ⊢＃ = refl
 𝒮-Φ (⊢𝓈 tM) =
   ap (δᵖ ∘ mapᵖ Φ-𝓈) (𝒮-Φ tM)
@@ -55,9 +90,10 @@ private variable
 𝒮-Φ (⊢?⁰ tM tM₁ tM₂) =
   let qq = 𝒮-Φ tM in
   {!!}
+-}
 
-S-Eval : 𝒮 ＝ Eval
-S-Eval = fix-unique {f▹ = Φ} (fun-ext λ T → fun-ext λ t → fun-ext λ tT → sym $ 𝒮-Φ tT)
+--S-Eval : 𝒮 ＝ Eval
+--S-Eval = fix-unique {f▹ = Φ} (fun-ext λ T → fun-ext λ t → fun-ext λ tT → sym $ 𝒮-Φ tT)
 
 {-
 δ-comm : ∀ {k T}
