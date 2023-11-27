@@ -13,11 +13,11 @@ open import PCF.Ty
 open import PCF.Int.TyTerm
 open import PCF.Int.ScottModelOfTypes
 
-𝒞⟦_⟧ : {@0 n : ℕ} → Ctx n → 𝒰
+𝒞⟦_⟧ : {n : ℕ} → Ctx n → 𝒰
 𝒞⟦ []    ⟧ = ⊤
-𝒞⟦ x ∷ Γ ⟧ = 𝒞⟦ Γ ⟧ × 𝒯⟦ x ⟧
+𝒞⟦ Γ ﹐ σ ⟧ = 𝒞⟦ Γ ⟧ × 𝒯⟦ σ ⟧
 
-extractᵧ : {@0 n : ℕ} {σ : Ty} {Γ : Ctx n}
+extractᵧ : {n : ℕ} {σ : Ty} {Γ : Ctx n}
         → (x : Γ ∋ σ)
         → 𝒞⟦ Γ ⟧ → 𝒯⟦ σ ⟧
 extractᵧ  here     (_ , 𝒯σ) = 𝒯σ

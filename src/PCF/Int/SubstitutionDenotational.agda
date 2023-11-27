@@ -16,15 +16,15 @@ open import PCF.Int.ScottModelOfTypes
 open import PCF.Int.ScottModelOfContexts
 open import PCF.Int.ScottModelOfTerms
 
-replace-first-lemma : {@0 n : ℕ} {Γ : Ctx n} {σ τ : Ty}
-                      (x : (τ ∷ Γ) ∋ σ)
+replace-first-lemma : {n : ℕ} {Γ : Ctx n} {σ τ : Ty}
+                      (x : (Γ ﹐ τ) ∋ σ)
                       (γ : 𝒞⟦ Γ ⟧)
                       (T : Γ ⊢ τ)
                     → (ℰ⟦ ` x ⟧ (γ , ℰ⟦ T ⟧ γ)) ＝ ℰ⟦ replace-first T x ⟧ γ
 replace-first-lemma  here     γ T = refl
 replace-first-lemma (there x) γ T = refl
 
-rename-lemma : {@0 n m : ℕ} {Γ : Ctx n} {Δ : Ctx m} {σ : Ty}
+rename-lemma : {n m : ℕ} {Γ : Ctx n} {Δ : Ctx m} {σ : Ty}
                (M : Γ ⊢ σ)
                (ρ : ∀ {A} → Γ ∋ A → Δ ∋ A)
                (γ : 𝒞⟦ Γ ⟧)
@@ -37,7 +37,7 @@ rename-lemma {Γ} {σ = σ ⇒ τ} (ƛ M)          ρ γ d e =
     rename-lemma M (extᵧ ρ) (γ , z) (d , z) go
   where
   go : {z : 𝒯⟦ σ ⟧} {A : Ty}
-     → (x : (σ ∷ Γ) ∋ A)
+     → (x : (Γ ﹐ σ) ∋ A)
      → extractᵧ x (γ , z) ＝ extractᵧ (extᵧ ρ x) (d , z)
   go  here     = refl
   go (there x) = e x
@@ -53,7 +53,7 @@ rename-lemma                 (𝓅 M)          ρ γ d e =
 rename-lemma                 (?⁰ L ↑ M ↓ N) ρ γ d e =
   ap³-simple ifz^ (rename-lemma M ρ γ d e) (rename-lemma N ρ γ d e) (rename-lemma L ρ γ d e)
 
-substitution-lemma : {@0 n m : ℕ} {Γ : Ctx n} {Δ : Ctx m} {σ : Ty}
+substitution-lemma : {n m : ℕ} {Γ : Ctx n} {Δ : Ctx m} {σ : Ty}
                      (M : Γ ⊢ σ)
                      (f : ∀ {A} → Γ ∋ A → Δ ⊢ A)
                      (γ : 𝒞⟦ Γ ⟧)
@@ -66,7 +66,7 @@ substitution-lemma {Γ} {σ = σ ⇒ τ} (ƛ M)          f γ d g =
     substitution-lemma M (exts f) (γ , z) (d , z) go
   where
   go : {z : 𝒯⟦ σ ⟧} {A : Ty}
-     → (x : (σ ∷ Γ) ∋ A)
+     → (x : (Γ ﹐ σ) ∋ A)
      → ℰ⟦ ` x ⟧ (γ , z) ＝ ℰ⟦ exts f x ⟧ (d , z)
   go      here     = refl
   go {z} (there x) = g x ∙ sym (rename-lemma (f x) there d (d , z) (λ _ → refl))
@@ -82,8 +82,8 @@ substitution-lemma (𝓅 M)          f γ d g =
 substitution-lemma (?⁰ L ↑ M ↓ N) f γ d g =
   ap³-simple ifz^ (substitution-lemma M f γ d g) (substitution-lemma N f γ d g) (substitution-lemma L f γ d g)
 
-β-equality : {@0 n : ℕ} {Γ : Ctx n} {σ τ : Ty}
-             (M : (τ ∷ Γ) ⊢ σ)
+β-equality : {n : ℕ} {Γ : Ctx n} {σ τ : Ty}
+             (M : (Γ ﹐ τ) ⊢ σ)
              (N : Γ ⊢ τ)
              (γ : 𝒞⟦ Γ ⟧)
            → (ℰ⟦ (ƛ M) · N ⟧ γ) ＝ ℰ⟦ M [ N ] ⟧ γ
@@ -91,7 +91,7 @@ substitution-lemma (?⁰ L ↑ M ↓ N) f γ d g =
   substitution-lemma M (replace-first N) (γ , ℰ⟦ N ⟧ γ) γ go
   where
   go : ∀ {A}
-       → (x : (τ ∷ Γ) ∋ A)
+       → (x : (Γ ﹐ τ) ∋ A)
      → ℰ⟦ ` x ⟧ (γ , ℰ⟦ N ⟧ γ) ＝ ℰ⟦ replace-first N x ⟧ γ
   go  here     = refl
   go (there x) = refl

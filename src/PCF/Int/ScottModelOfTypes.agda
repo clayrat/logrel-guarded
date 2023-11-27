@@ -26,6 +26,19 @@ private variable
 δ : 𝒯⟦ T ⟧ → 𝒯⟦ T ⟧
 δ = θ ∘ next
 
+δ-$ : ∀ {k S T}
+      {f : 𝒯⟦ S ⇒ T ⟧}
+      {s : 𝒯⟦ S ⟧}
+    → (iter k δ f) s ＝ iter k δ (f s)
+δ-$ {k = zero}  = refl
+δ-$ {k = suc k} = ap δ (δ-$ {k = k})
+
+-- TODO move to partiality
+δᵖ-map : ∀ {B : 𝒰 ℓ} {f : A → B} {k : ℕ} {x : Part A}
+       → mapᵖ f (iter k δᵖ x) ＝ iter k δᵖ (mapᵖ f x)
+δᵖ-map {k = zero}  = refl
+δᵖ-map {k = suc k} = ap δᵖ (δᵖ-map {k = k})
+
 ^-body : (A → 𝒯⟦ T ⟧)
        → ▹ (Part A → 𝒯⟦ T ⟧)
        → Part A → 𝒯⟦ T ⟧
