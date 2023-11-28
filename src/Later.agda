@@ -29,6 +29,9 @@ postulate
 
 syntax ▹-syntax (λ α → e) = ▹[ α ] e
 
+transport▹ : (A : I → ▹ 𝒰 ℓ) → ▸ A i0 → ▸ A i1
+transport▹ A = transp (λ i → ▸ A i) i0
+
 next : A → ▹ A
 next x _ = x
 
@@ -91,3 +94,24 @@ fix-unique {f▹} e = fix λ ih▹ → e ∙ ap f▹ (▹-ext ih▹) ∙ sym (fi
 ▹Alg : 𝒰 ℓ → 𝒰 ℓ
 ▹Alg A = ▹ A → A
 
+-- hlevel interaction
+
+▹is-contr : {A : ▹ 𝒰 ℓ}
+  → ▹[ α ] is-contr (A α)
+  → is-contr (▹[ α ] (A α))
+▹is-contr p = is-contr-η $ (λ α → is-contr-β (p α) .fst) , λ y i α → is-contr-β (p α) .snd (y α) i
+
+▹is-prop : {A : ▹ 𝒰 ℓ}
+  → ▹[ α ] is-prop (A α)
+  → is-prop (▹[ α ] (A α))
+▹is-prop p = is-prop-η λ x y i α → is-prop-β (p α) (x α) (y α) i
+
+▹is-of-hlevel : {A : ▹ 𝒰 ℓ} {n : HLevel}
+  → ▹[ α ] is-of-hlevel n (A α)
+  → is-of-hlevel n (▹[ α ] (A α))
+▹is-of-hlevel {n = zero}          = ▹is-contr
+▹is-of-hlevel {n = suc zero}      = ▹is-prop
+▹is-of-hlevel {n = suc (suc n)} a =
+  is-of-hlevel-η n λ p q →
+    retract→is-of-hlevel (suc n) ▹-extP ▹-apP (λ _ → refl)
+    (▹is-of-hlevel λ α → is-of-hlevel-β n (a α) (p α) (q α))
