@@ -9,8 +9,9 @@ open import Data.List.Correspondences.Unary.All
 open import Data.String
 
 open import Interlude
+open import STLC.Ty
 open import STLC1.Ext.Term
-open import STLC1.Ext.Ty
+open import STLC1.Ext.TyTerm
 open import STLC1.Ext.Smallstep.Step
 
 -- multisubstitution

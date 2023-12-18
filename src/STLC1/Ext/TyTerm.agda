@@ -1,4 +1,4 @@
-module STLC1.Ext.Ty where
+module STLC1.Ext.TyTerm where
 
 open import Prelude hiding (_⊆_)
 open import Data.Empty
@@ -6,18 +6,12 @@ open import Data.Dec
 open import Data.String
 open import Data.List
 
+open import STLC.Ty
 open import STLC1.Ext.Term
 
 infix  4  _∋_⦂_
 infix  4  _⊢_⦂_
 infixl 5 _,_⦂_
-infixr 7 _⇒_
-
--- types
-
-data Ty : 𝒰 where
-  _⇒_ : Ty → Ty → Ty
-  𝟙   : Ty
 
 -- context
 
@@ -125,11 +119,11 @@ weaken {t = .(L · M)}                  sub (_⊢·_ {L} {M} ⊢L ⊢M)   =
 weaken-∅ : ∀ {t T} Γ → ∅ ⊢ t ⦂ T → Γ ⊢ t ⦂ T
 weaken-∅ Γ H0 = weaken ⊆-∅ H0
 
-drop : ∀ {Γ x M A B C}
+dropᵧ : ∀ {Γ x M A B C}
   → Γ , x ⦂ A , x ⦂ B ⊢ M ⦂ C
     --------------------------
   → Γ , x ⦂ B ⊢ M ⦂ C
-drop {Γ} {x} {M} {A} {B} {C} ⊢M = weaken ⊆-shadow ⊢M
+dropᵧ {Γ} {x} {M} {A} {B} {C} ⊢M = weaken ⊆-shadow ⊢M
 
 swap : ∀ {Γ x y M A B C}
   → x ≠ y

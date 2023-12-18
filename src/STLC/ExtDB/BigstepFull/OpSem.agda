@@ -2,8 +2,9 @@ module STLC.ExtDB.BigstepFull.OpSem where
 
 open import Prelude
 
+open import STLC.Ty
 open import STLC.ExtDB.Term
-open import STLC.ExtDB.Ty
+open import STLC.ExtDB.TyTerm
 
 -- big-step / natural
 

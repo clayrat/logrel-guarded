@@ -6,8 +6,9 @@ open import Data.Dec
 open import Data.String
 open import Data.List
 
+open import STLC.Ty
 open import STLC1.Ext.Term
-open import STLC1.Ext.Ty
+open import STLC1.Ext.TyTerm
 open import STLC1.Ext.Smallstep.Step
 
 -- substitution preserves typing
@@ -22,10 +23,10 @@ subst-ty {Γ} {x = y}     ⊢V (⊢` {x} here) with x ≟ y
 ... | yes _   = weaken-∅ Γ ⊢V
 ... | no  x≠y = absurd (x≠y refl)
 subst-ty {x = y}         ⊢V (⊢` {x} (there x≠y ∋x)) with x ≟ y
-... | yes eq  = absurd (x≠y eq)
+... | yes e  = absurd (x≠y e)
 ... | no  _   = ⊢` ∋x
 subst-ty {Γ} {x = y} {A} ⊢V (⊢ƛ {x} {N} {A = C} {B} ⊢N) with x ≟ y
-... | yes eq  = ⊢ƛ (drop (subst (λ n → Γ , n ⦂ A , x ⦂ C ⊢ N ⦂ B) (sym eq) ⊢N))
+... | yes e  = ⊢ƛ (dropᵧ (subst (λ n → Γ , n ⦂ A , x ⦂ C ⊢ N ⦂ B) (sym e) ⊢N))
 ... | no  x≠y = ⊢ƛ (subst-ty ⊢V (swap x≠y ⊢N))
 subst-ty                 ⊢V (⊢L ⊢· ⊢M) = (subst-ty ⊢V ⊢L) ⊢· (subst-ty ⊢V ⊢M)
 

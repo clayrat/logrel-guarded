@@ -5,8 +5,9 @@ open import Data.Empty
 open import Data.List
 
 open import Interlude
+open import STLC.Ty
 open import STLC1.Ext.Term
-open import STLC1.Ext.Ty
+open import STLC1.Ext.TyTerm
 open import STLC1.Ext.Bigstep.Semantics
 
 infix 4 _⊨_

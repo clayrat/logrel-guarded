@@ -4,8 +4,10 @@ open import Prelude
 open import Data.Empty
 open import Data.List
 
+
+open import STLC.Ty
 open import STLC1.Ext.Term
-open import STLC1.Ext.Ty
+open import STLC1.Ext.TyTerm
 
 infix 4 _∣_⇓_
 infix 5 ⟨ƛ_⇒_⟩_

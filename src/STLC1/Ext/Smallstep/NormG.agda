@@ -6,14 +6,16 @@ open import Data.Empty
 open import Data.Dec
 open import Data.String
 open import Data.Maybe
+open import Data.List
 open import Data.List.Correspondences.Unary.All
 
 open import Later
 open import Interlude
 open import Guarded.Partial
 
+open import STLC.Ty
 open import STLC1.Ext.Term
-open import STLC1.Ext.Ty
+open import STLC1.Ext.TyTerm
 open import STLC1.Ext.Smallstep.Step
 open import STLC1.Ext.Smallstep.TyStep
 open import STLC1.Ext.Smallstep.Multi
@@ -97,7 +99,8 @@ step-preserves-R {T = 𝟙}       S r = let tp , h = R𝟙-match r in
   R𝟙 (preserve tp S) (step-preserves-halting S .fst h)
 step-preserves-R {T = T₁ ⇒ T₂} S r = let tp , h , Ri = R⇒-match r in
   R⇒ (preserve tp S) (step-preserves-halting S .fst h)
-     (λ t″ R₁ → mapᵖ (▹map (step-preserves-R (ξ-·₁ S))) (Ri t″ R₁))
+     (λ t″ R₁ → mapᵖ (▹map (step-preserves-R (ξ-·₁ S))
+                           ) (Ri t″ R₁))
 
 multistep-preserves-R : ∀ {T t t′}
                       → (t —↠ t′) → R T t → R T t′
@@ -111,7 +114,7 @@ step-preserves-R' {T = 𝟙}       {t} {t′} tp S r = let _ , h′ = R𝟙-matc
   R𝟙 tp (step-preserves-halting S .snd h′)
 step-preserves-R' {T = T₁ ⇒ T₂} {t} {t′} tp S r = let _ , h′ , Ri = R⇒-match r in
   R⇒ tp (step-preserves-halting S .snd h′)
-     λ t″ R₁ → mapᵖ (▹map² (λ x → step-preserves-R' (tp ⊢· R-typable-empty x) (ξ-·₁ S)) R₁)
+     λ t″ R₁ → mapᵖ (▹map² (λ x y → step-preserves-R' (tp ⊢· R-typable-empty x) (ξ-·₁ S) {!!}) R₁)
                     (Ri t″ R₁)
 
 multistep-preserves-R' : ∀ {T t t′}
@@ -125,7 +128,8 @@ multistep-preserves-R' {T} {t} {t′} tp (.t —→⟨ TM ⟩ S) Rt =
 data Inst : Tass → Env → 𝒰 where
   V-nil  : Inst [] []
   V-cons : ∀ {x T v c e}
-         → Value v → R T v → Inst c e
+         → Value v → R T v
+         → Inst c e
          → Inst ((x , T) ∷ c) ((x , v) ∷ e)
 
 instantiation-domains-match : ∀ {c e}
@@ -133,11 +137,11 @@ instantiation-domains-match : ∀ {c e}
                             → ∀ {x T}
                             → lup x c ＝ just T
                             → Σ[ t ꞉ Term ] (lup x e ＝ just t)
-instantiation-domains-match  V-nil                         eq =
-  absurd (nothing≠just eq)
-instantiation-domains-match (V-cons {x = y} {v} V r i) {x} eq with x ≟ y
+instantiation-domains-match  V-nil                         e =
+  absurd (nothing≠just e)
+instantiation-domains-match (V-cons {x = y} {v} V r i) {x} e with x ≟ y
 ... | yes prf = v , refl
-... | no ctra = instantiation-domains-match i eq
+... | no ctra = instantiation-domains-match i e
 
 instantiation-env-closed : ∀ {c e}
                          → Inst c e

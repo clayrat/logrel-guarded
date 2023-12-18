@@ -4,6 +4,7 @@ open import Prelude hiding ([_])
 open import Data.Empty
 open import Data.Dec
 
+open import STLC.Ty
 open import STLC1.Int.TyTerm
 open import STLC1.Int.NbE.CtxExt
 open import STLC1.Int.NbE.Subst

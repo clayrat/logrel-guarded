@@ -5,11 +5,13 @@ open import Data.Empty
 open import Data.Dec
 open import Data.String
 open import Data.Maybe
+open import Data.List
 open import Data.List.Correspondences.Unary.All
 
 open import Interlude
+open import STLC.Ty
 open import STLC1.Ext.Term
-open import STLC1.Ext.Ty
+open import STLC1.Ext.TyTerm
 open import STLC1.Ext.Smallstep.Step
 open import STLC1.Ext.Smallstep.TyStep
 open import STLC1.Ext.Smallstep.Multi
@@ -75,11 +77,11 @@ instantiation-domains-match : ∀ {c e}
                             → ∀ {x T}
                             → lup x c ＝ just T
                             → Σ[ t ꞉ Term ] (lup x e ＝ just t)
-instantiation-domains-match  V-nil                         eq =
-  absurd (nothing≠just eq)
-instantiation-domains-match (V-cons {x = y} {v} V r i) {x} eq with x ≟ y
+instantiation-domains-match  V-nil                         e =
+  absurd (nothing≠just e)
+instantiation-domains-match (V-cons {x = y} {v} V r i) {x} e with x ≟ y
 ... | yes prf = v , refl
-... | no ctra = instantiation-domains-match i eq
+... | no ctra = instantiation-domains-match i e
 
 instantiation-env-closed : ∀ {c e}
                          → Inst c e

@@ -1,9 +1,10 @@
 module STLC1.Int.NbE.CtxExt where
 
-open import Prelude
+open import Prelude hiding (_≤?_)
 open import Data.Empty
 open import Data.Dec
 
+open import STLC.Ty
 open import STLC1.Int.TyTerm
 
 infix 4 _≤_

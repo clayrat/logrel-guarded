@@ -1,21 +1,15 @@
-module STLC.ExtDB.Ty where
+module STLC.ExtDB.TyTerm where
 
 open import Prelude
 open import Data.Empty
 open import Data.List
 
+open import STLC.Ty
 open import STLC.ExtDB.Term
 
 infix  4 _∋_⦂_
 infix  4 _⊢_⦂_
 infixl 5 _﹐_
-infixr 7 _⇒_
-
--- types
-
-data Ty : 𝒰 where
-  _⇒_ : Ty → Ty → Ty
-  𝟙   : Ty
 
 -- context
 

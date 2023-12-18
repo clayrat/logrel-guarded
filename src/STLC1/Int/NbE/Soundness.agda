@@ -1,10 +1,11 @@
 module STLC1.Int.NbE.Soundness where
 
-open import Prelude hiding ([_])
+open import Prelude hiding ([_] ; _≤?_)
 open import Data.Empty
 open import Data.Dec
 open import Data.Maybe renaming (rec to recᵐ)
 
+open import STLC.Ty
 open import STLC1.Int.TyTerm
 open import STLC1.Int.NbE.CtxExt
 open import STLC1.Int.NbE.Subst

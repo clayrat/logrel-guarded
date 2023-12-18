@@ -1,10 +1,11 @@
 module STLC1.Int.NbE.Norm where
 
-open import Prelude hiding ([_])
+open import Prelude hiding ([_]; _≤?_)
 open import Data.Empty
 open import Data.Dec renaming (rec to recᵈ)
 open import Data.Maybe renaming (rec to recᵐ; map to mapᵐ)
 
+open import STLC.Ty
 open import STLC1.Int.TyTerm
 open import STLC1.Int.NbE.CtxExt
 open import STLC1.Int.NbE.Subst
