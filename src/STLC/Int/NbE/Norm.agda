@@ -80,6 +80,10 @@ apply : ∀ {Δ A B}
       → Val Δ (A ⇒ B) → Val Δ A → Part (Val Δ B)
 apply = apply-body (dfix eval-body)
 
+beta : ∀ {Γ Δ A B}
+     → Γ ﹐ A ⊢ B → Env Δ Γ → Val Δ A → ▹ Part (Val Δ B)
+beta = beta-body (dfix eval-body)
+
 data Nf (Γ : Ctx) : Ty → 𝒰 where
   nf-ƛ : ∀ {A B}
         → Nf (Γ ﹐ A) B
