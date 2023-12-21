@@ -70,7 +70,8 @@ mutual
   beta-body : ∀ {Γ Δ A B}
        → ▹ (∀ Γ Δ B → Γ ⊢ B → Env Δ Γ → Part (Val Δ B))
        → Γ ﹐ A ⊢ B → Env Δ Γ → Val Δ A → ▹ Part (Val Δ B)
-  beta-body {Γ} {Δ} {A} {B} ev▹ tm e v = ev▹ ⊛ next (Γ ﹐ A) ⊛ next Δ ⊛ next B ⊛ next tm ⊛ next (e 、 v)
+  beta-body {Γ} {Δ} {A} {B} ev▹ tm e v =
+    ev▹ ⊛ next (Γ ﹐ A) ⊛ next Δ ⊛ next B ⊛ next tm ⊛ next (e 、 v)
 
 eval : ∀ {Γ Δ B}
      → Γ ⊢ B → Env Δ Γ → Part (Val Δ B)
