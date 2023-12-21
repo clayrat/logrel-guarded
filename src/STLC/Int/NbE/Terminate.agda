@@ -118,7 +118,7 @@ mutual
 
   beta≤-body : ∀ {Γ Δ Η A B} (t : (Γ ﹐ A) ⊢ B)(ρ : Env Δ Γ) (v : Val Δ A) (η : Η ≤ Δ)
              → ▹ (∀ Γ Δ Η A → (t : Γ ⊢ A) (ρ : Env Δ Γ) (η : Η ≤ Δ) → mapᵖ (val≤ η) (eval t ρ) ＝ eval t (env≤ η ρ))
-             → (▹map (mapᵖ (val≤ η)) (beta t ρ v)) ＝ beta t (env≤ η ρ) (val≤ η v)
+             → ▹map (mapᵖ (val≤ η)) (beta t ρ v) ＝ beta t (env≤ η ρ) (val≤ η v)
   beta≤-body {Γ} {Δ} {Η} {A} {B} t ρ v η e▹ = ▹-ext λ α →
     ap (mapᵖ (val≤ η)) (λ i → pfix eval-body i α (Γ ﹐ A) Δ B t (ρ 、 v))
     ∙ e▹ α (Γ ﹐ A) Δ Η B t (ρ 、 v) η
@@ -132,3 +132,121 @@ eval≤ {Γ} {Δ} {Η} {A} = fix eval≤-body Γ Δ Η A
 apply≤ : ∀ {Γ Δ A B} (f : Val Γ (A ⇒ B)) (v : Val Γ A) (η : Δ ≤ Γ)
        → mapᵖ (val≤ η) (apply f v) ＝ apply (val≤ η f) (val≤ η v)
 apply≤ f v η = apply≤-body f v η (dfix eval≤-body)
+
+-- TODO refactor via fix
+{-# TERMINATING #-}
+mutual
+  readback≤ : ∀{Γ Δ} A (η : Δ ≤ Γ) (v : Val Γ A)
+            → mapᵖ (nf≤ η) (readback v) ＝ readback (val≤ η v)
+  readback≤ 𝟙 η       (v-ne n) =
+    mapᵖ (nf≤ η) (readback (v-ne n))
+      ＝⟨⟩
+    mapᵖ (nf≤ η) (mapᵖ nf-ne (nereadback n))
+      ＝⟨ mapᵖ-comp (nereadback n) ⟩
+    mapᵖ (nf≤ η ∘ nf-ne) (nereadback n)
+      ＝⟨⟩
+    mapᵖ (nf-ne ∘ nen≤ η) (nereadback n)
+      ＝⟨ sym (mapᵖ-comp (nereadback n) ) ⟩
+    mapᵖ nf-ne (mapᵖ (nen≤ η) (nereadback n))
+      ＝⟨ ap (mapᵖ nf-ne) (nereadback≤ η n) ⟩
+    mapᵖ nf-ne (nereadback (nev≤ η n))
+      ＝⟨⟩
+    readback (v-ne (nev≤ η n))
+      ∎
+  readback≤ (A ⇒ B) η  v       =
+    mapᵖ (nf≤ η) (readback v)
+      ＝⟨⟩
+    mapᵖ (nf≤ η) (mapᵖ nf-ƛ (eta v))
+      ＝⟨ mapᵖ-comp (eta v) ⟩
+    mapᵖ (nf≤ η ∘ nf-ƛ) (eta v)
+      ＝⟨⟩
+    mapᵖ (nf-ƛ ∘ nf≤ (lift≤ η)) (eta v)
+      ＝⟨ sym (mapᵖ-comp (eta v)) ⟩
+    mapᵖ nf-ƛ (mapᵖ (nf≤ (lift≤ η)) (eta v))
+      ＝⟨ ap (mapᵖ nf-ƛ) (eta≤ η v) ⟩
+    mapᵖ nf-ƛ (eta (val≤ η v))
+      ＝⟨⟩
+    readback (val≤ η v)
+      ∎
+
+  nereadback≤ : ∀ {Γ Δ A} (η : Δ ≤ Γ) (t : Ne Val Γ A)
+              → mapᵖ (nen≤ η) (nereadback t) ＝ nereadback (nev≤ η t)
+  nereadback≤ η (ne-` x)   = refl
+  nereadback≤ η (ne-· {A} {B} n v) =
+    mapᵖ (nen≤ η) (nereadback (ne-· n v))
+      ＝⟨⟩
+    mapᵖ (nen≤ η) (nereadback n >>=ᵖ λ m → mapᵖ (ne-· m) (readback v))
+      ＝⟨ sym (bind-map (nereadback n >>=ᵖ λ m → mapᵖ (ne-· m) (readback v))) ⟩
+    (nereadback n >>=ᵖ λ m → mapᵖ (ne-· m) (readback v)) >>=ᵖ (now ∘ nen≤ η)
+      ＝⟨ bind-assoc (nereadback n) ⟩
+    (nereadback n >>=ᵖ λ m → mapᵖ (ne-· m) (readback v) >>=ᵖ (now ∘ nen≤ η))
+      ＝⟨ ap (nereadback n >>=ᵖ_)
+            (fun-ext λ m → bind-map (mapᵖ (ne-· m) (readback v))) ⟩
+    (nereadback n >>=ᵖ λ m → mapᵖ (nen≤ η) (mapᵖ (ne-· m) (readback v)))
+      ＝⟨ ap (nereadback n >>=ᵖ_)
+            (fun-ext λ m → mapᵖ-comp (readback v) ) ⟩
+    (nereadback n >>=ᵖ λ m → mapᵖ (nen≤ η ∘ ne-· m) (readback v))
+      ＝⟨⟩
+    (nereadback n >>=ᵖ λ m → mapᵖ (ne-· (nen≤ η m) ∘ nf≤ η) (readback v))
+      ＝⟨ ap (nereadback n >>=ᵖ_)
+            (fun-ext λ m → sym (mapᵖ-comp (readback v))) ⟩
+    (nereadback n >>=ᵖ λ m → mapᵖ (ne-· (nen≤ η m)) (mapᵖ (nf≤ η) (readback v)))
+      ＝⟨ sym (bind-assoc (nereadback n)) ⟩
+    ((nereadback n >>=ᵖ (now ∘ nen≤ η)) >>=ᵖ λ m → mapᵖ (ne-· m) (mapᵖ (nf≤ η) (readback v)))
+      ＝⟨ ap (_>>=ᵖ (λ m → mapᵖ (ne-· m) (mapᵖ (nf≤ η) (readback v)))) (bind-map (nereadback n)) ⟩
+    (mapᵖ (nen≤ η) (nereadback n) >>=ᵖ λ m → mapᵖ (ne-· m) (mapᵖ (nf≤ η) (readback v)))
+      ＝⟨ ap (mapᵖ (nen≤ η) (nereadback n) >>=ᵖ_)
+            (fun-ext λ m → ap (mapᵖ (ne-· m)) (readback≤ A η v)) ⟩
+    (mapᵖ (nen≤ η) (nereadback n) >>=ᵖ λ m → mapᵖ (ne-· m) (readback (val≤ η v)))
+      ＝⟨ ap (_>>=ᵖ (λ m → mapᵖ (ne-· m) (readback (val≤ η v)))) (nereadback≤ η n) ⟩
+    (nereadback (nev≤ η n) >>=ᵖ λ m → mapᵖ (ne-· m) (readback (val≤ η v)))
+      ＝⟨⟩
+    nereadback (ne-· (nev≤ η n) (val≤ η v))
+      ∎
+
+  eta≤ : ∀ {Γ Δ A B} (η : Δ ≤ Γ) (v : Val Γ (A ⇒ B))
+       → mapᵖ (nf≤ (lift≤ η)) (eta v) ＝ eta (val≤ η v)
+  eta≤ {Γ} {Δ} {A} {B} η v =
+    mapᵖ (nf≤ (lift≤ η)) (eta v)
+      ＝⟨⟩
+    mapᵖ (nf≤ (lift≤ η)) (apply (weakVal v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w))
+      ＝⟨ sym (bind-map (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w))) ⟩
+    ((apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w)) >>=ᵖ (now ∘ nf≤ (lift≤ η)))
+      ＝⟨ bind-assoc (apply (val≤ wk v) (v-ne (ne-` here))) ⟩
+    (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w) >>=ᵖ (now ∘ nf≤ (lift≤ η)))
+      ＝⟨ ap (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ_) (fun-ext λ w → bind-map (later (dfix readback-body ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w))) ⟩
+    (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → mapᵖ (nf≤ (lift≤ η)) (later (dfix readback-body ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w)))
+      ＝⟨⟩
+    (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → later λ α → mapᵖ (nf≤ (lift≤ η)) (dfix readback-body α (Γ ﹐ A) B w))
+      ＝⟨ ap (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ_)
+            (fun-ext λ w → ap later (▹-ext λ α i → mapᵖ (nf≤ (lift≤ η)) (pfix readback-body i α (Γ ﹐ A) B w))) ⟩
+    (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → later (next (mapᵖ (nf≤ (lift≤ η)) (readback w))))
+      ＝⟨ ap (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ_)
+            (fun-ext λ w → ap later (▹-ext λ α → readback≤ B (lift≤ η) w)) ⟩
+    (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → later (next (readback (val≤ (lift≤ η) w))))
+      ＝⟨ ap (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ_)
+            (fun-ext λ w → ap later (▹-ext λ α i → pfix readback-body (~ i) α (Δ ﹐ A) B (val≤ (lift≤ η) w))) ⟩
+    (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next (val≤ (lift≤ η) w)))
+      ＝⟨⟩
+    (apply (val≤ wk v) (v-ne (ne-` here)) >>=ᵖ (λ z → now (val≤ (lift≤ η) z) >>=ᵖ (λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))))
+      ＝⟨ sym (bind-assoc (apply (val≤ wk v) (v-ne (ne-` here)))) ⟩
+    ((apply (weakVal v) (v-ne (ne-` here)) >>=ᵖ (now ∘ val≤ (lift≤ η))) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+      ＝⟨ ap (_>>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+            (bind-map (apply (weakVal v) (v-ne (ne-` here)))) ⟩
+    mapᵖ (val≤ (lift≤ η)) (apply (weakVal v) (v-ne (ne-` here))) >>=ᵖ (λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+      ＝⟨ ap (_>>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+            (apply≤ (weakVal v) (v-ne (ne-` here)) (lift≤ η)) ⟩
+    (apply (val≤ (lift≤ η) (val≤ wk v)) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+      ＝⟨ ap (λ q → apply q (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+             (val≤-● (lift≤ η) wk v) ⟩
+    (apply (val≤ (weak≤ (η ● id≤)) v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+      ＝⟨ ap (λ q → apply (val≤ (weak≤ q) v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+             (η●id η) ⟩
+    (apply (val≤ (weak≤ η) v) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+      ＝⟨ ap (λ q → apply q (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+             (sym (val≤-● wk η v)) ⟩
+    (apply (weakVal (val≤ η v)) (v-ne (ne-` here)) >>=ᵖ λ w → later (dfix readback-body ⊛ next (Δ ﹐ A) ⊛ next B ⊛ next w))
+     ＝⟨⟩
+    eta (val≤ η v)
+      ∎
+

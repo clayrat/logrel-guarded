@@ -131,6 +131,26 @@ mutual
   readback-body : ▹ (∀ Γ A → Val Γ A → Part (Nf Γ A))
                 →    ∀ Γ A → Val Γ A → Part (Nf Γ A)
   readback-body r▹ Γ  𝟙      (v-ne n) = mapᵖ nf-ne (nereadback-body r▹ n)
+  readback-body r▹ Γ (A ⇒ B)  v       = mapᵖ nf-ƛ (eta-body r▹ v)
+
+  nereadback-body : ∀ {Γ A}
+                  → ▹ (∀ Γ A → Val Γ A → Part (Nf Γ A))
+                  → Ne Val Γ A → Part (Ne Nf Γ A)
+  nereadback-body     r▹ (ne-` x)       = now (ne-` x)
+  nereadback-body {Γ} r▹ (ne-· {A} n v) = nereadback-body r▹ n >>=ᵖ λ m →
+                                          mapᵖ (ne-· m) (readback-body r▹ Γ A v)
+
+  eta-body : ∀ {Γ A B}
+           → ▹ (∀ Γ A → Val Γ A → Part (Nf Γ A))
+           → Val Γ (A ⇒ B) → Part (Nf (Γ ﹐ A) B)
+  eta-body {Γ} {A} {B} r▹ v =
+    apply (weakVal v) (v-ne (ne-` here)) >>=ᵖ λ w → later (r▹ ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w)
+
+{-
+mutual
+  readback-body : ▹ (∀ Γ A → Val Γ A → Part (Nf Γ A))
+                →    ∀ Γ A → Val Γ A → Part (Nf Γ A)
+  readback-body r▹ Γ  𝟙      (v-ne n) = mapᵖ nf-ne (nereadback-body r▹ n)
   readback-body r▹ Γ (A ⇒ B)  v       = mapᵖ nf-ƛ (later (eta-body r▹ v))
 
   nereadback-body : ∀ {Γ A}
@@ -147,7 +167,7 @@ mutual
     Part▹ id $
     apply (weakVal v) (v-ne (ne-` here)) >>=ᵖ λ w →
     ▹Part+ (r▹ ⊛ next (Γ ﹐ A) ⊛ next B ⊛ next w)  -- adds one more step!
-
+-}
 readback : ∀ {Γ A}
          → Val Γ A → Part (Nf Γ A)
 readback {Γ} {A} = fix readback-body Γ A
@@ -155,6 +175,10 @@ readback {Γ} {A} = fix readback-body Γ A
 nereadback : ∀ {Γ A}
            → Ne Val Γ A → Part (Ne Nf Γ A)
 nereadback = nereadback-body (dfix readback-body)
+
+eta : ∀ {Γ A B}
+    → Val Γ (A ⇒ B) → Part (Nf (Γ ﹐ A) B)
+eta = eta-body (dfix readback-body)
 
 id-env : ∀ Γ → Env Γ Γ
 id-env ∅       = ε
