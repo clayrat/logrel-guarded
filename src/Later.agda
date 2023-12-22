@@ -13,6 +13,7 @@ private
     B : A → 𝒰 ℓ′
 
 infixl 4 _⊛_
+infixr -2 ▹-syntax
 
 -- We postulate Tick as it is supposed to be an abstract sort.
 postulate
@@ -66,8 +67,10 @@ _⊛_ : ▹ ((a : A) → B a)
      → (▹[ α ] ＜ (x▹ α) ／ (λ i → P i α) ＼ (y▹ α) ＞)
 ▹-apP e α i = e i α
 
--- These will compute only on diamond ticks.
 postulate
+  tick-irr : (x : ▹ A) → ▹[ α ] ▹[ β ] x α ＝ x β
+
+-- These will compute only on diamond ticks.
   dfix : (▹ A → A) → ▹ A
   pfix : (f : ▹ A → A) → dfix f ＝ next (f (dfix f))
 

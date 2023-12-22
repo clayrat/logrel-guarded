@@ -15,7 +15,8 @@ open import STLC.Int.NbE.Norm
 mutual
   V⟦_⟧ : ∀ {Γ} → (A : Ty) → Val Γ A → 𝒰
   V⟦ 𝟙 ⟧           (v-ne w) = nereadback w ⇓
-  V⟦_⟧ {Γ} (A ⇒ B)  f       = ∀ {Δ} (η : Δ ≤ Γ) (u : Val Δ A) → V⟦ A ⟧ u → C⟦ B ⟧ (apply (val≤ η f) u)
+  V⟦_⟧ {Γ} (A ⇒ B)  f       = ∀ {Δ} (η : Δ ≤ Γ) (u : Val Δ A)
+                            → V⟦ A ⟧ u → C⟦ B ⟧ (apply (val≤ η f) u)
 
   C⟦_⟧ : ∀ {Γ} → (A : Ty) → Part (Val Γ A) → 𝒰
   C⟦_⟧ {Γ} A p = Σ[ v ꞉ Val Γ A ] (p ⇓ᵖ v) × V⟦ A ⟧ v
@@ -277,3 +278,83 @@ mutual
        → E⟦ Γ ⟧ ρ → E⟦ Γ ⟧ (env≤ η ρ)
   E⟦⟧≤ η  ε       θ      = tt
   E⟦⟧≤ η (ρ 、 x) (θ , v) = E⟦⟧≤ η ρ θ , V⟦⟧≤ _ η x v
+
+⟦var⟧ : ∀ {Δ Γ A} (x : Γ ∋ A) (ρ : Env Δ Γ)
+      → E⟦ Γ ⟧ ρ → C⟦ A ⟧ (now (lookup x ρ))
+⟦var⟧  here     (ρ 、 v) (θ , v⇓) = v , now⇓ , v⇓
+⟦var⟧ (there x) (ρ 、 v) (θ , v⇓) = ⟦var⟧ x ρ θ
+
+sound-β : ∀ {Δ Γ A B} (t : Γ ﹐ A ⊢ B) (ρ : Env Δ Γ) (u : Val Δ A)
+        → C⟦ B ⟧ (eval t (ρ 、 u)) → C⟦ B ⟧ (apply (v-ƛ t ρ) u)
+sound-β {Δ} {Γ} {A} {B} t ρ θ (v , v⇓ , ⟦v⟧) =
+  v , transport (λ i → later (λ α → pfix eval-body (~ i) α (Γ ﹐ A) Δ B t (ρ 、 θ)) ⇓ᵖ v) (δ⇓ v⇓) , ⟦v⟧
+
+⟦abs⟧ : ∀ {Δ Γ A B} (t : Γ ﹐ A ⊢ B) (ρ : Env Δ Γ) (θ : E⟦ Γ ⟧ ρ)
+      → (∀ {Η} (η : Η ≤ Δ) (u : Val Η A) (u⇓ : V⟦ A ⟧ u) → C⟦ B ⟧ (eval t (env≤ η ρ 、 u)))
+      → C⟦ A ⇒ B ⟧ (now (v-ƛ t ρ))
+⟦abs⟧ t ρ θ ih = v-ƛ t ρ , now⇓ , λ η u p → sound-β t (env≤ η ρ) u (ih η u p)
+
+⟦app⟧ : ∀ {Δ A B} {f? : Part (Val Δ (A ⇒ B))} {u? : Part (Val Δ A)}
+      → C⟦ A ⇒ B ⟧ f? → C⟦ A ⟧ u? → C⟦ B ⟧ (f? >>=ᵖ λ f → u? >>=ᵖ apply f)
+⟦app⟧ {u?} (f , f⇓ , ⟦f⟧) (u , u⇓ , ⟦u⟧) =
+  let v , v⇓ , ⟦v⟧ = ⟦f⟧ id≤ u ⟦u⟧
+      v⇓′ = bind⇓ (λ g → u? >>=ᵖ apply g) f⇓ $
+            bind⇓ (apply f) u⇓ $
+            subst (λ q → apply q u ⇓ᵖ v) (val≤-id f) v⇓
+   in
+  v , v⇓′ , ⟦v⟧
+
+-- fundamental lemma
+
+term : ∀ {Δ Γ A} (t : Γ ⊢ A) (ρ : Env Δ Γ) (θ : E⟦ Γ ⟧ ρ)
+     → C⟦ A ⟧ (eval t ρ)
+term (` x)   ρ θ = ⟦var⟧ x ρ θ
+term (ƛ M)   ρ θ = ⟦abs⟧ M ρ θ (λ η u u⇓ → term M (env≤ η ρ 、 u) (E⟦⟧≤ η ρ θ , u⇓))
+term (M · N) ρ θ = ⟦app⟧ (term M ρ θ) (term N ρ θ)
+
+mutual
+  reify : ∀ {Γ} A (v : Val Γ A)
+        → V⟦ A ⟧ v → readback v ⇓
+  reify      𝟙      (v-ne nv) (nn , nn⇓) = nf-ne nn , map⇓ nf-ne nn⇓
+  reify {Γ} (A ⇒ B)  v        v⇓         =
+    let u = v-ne (ne-` here)
+        ⟦u⟧ = reflect A (ne-` here) (ne-` here , now⇓)
+        w , w⇓ , ⟦w⟧ = v⇓ wk u ⟦u⟧
+        n , n⇓ = reify B w ⟦w⟧
+        λn⇓ = δ⇓ (map⇓ nf-ƛ (bind⇓ readback w⇓ n⇓))
+     in
+    nf-ƛ n
+    , (transport (λ i → mapᵖ nf-ƛ (apply (val≤ wk v) u >>=ᵖ λ w →
+                         later λ α → pfix readback-body (~ i) α (Γ ﹐ A) B w) ⇓ᵖ nf-ƛ n) $
+       subst (λ q → mapᵖ nf-ƛ q ⇓ᵖ nf-ƛ n) (sym (bind-δᵖ (apply (val≤ wk v) u))) λn⇓)
+
+  reflect : ∀ {Γ} A (w : Ne Val Γ A)
+          → nereadback w ⇓ → V⟦ A ⟧ (v-ne w)
+  reflect  𝟙      w  w⇓               = w⇓
+  reflect (A ⇒ B) w (m , w⇓m) η u ⟦u⟧ =
+    let  n , ⇓n  = reify A u ⟦u⟧
+         m′      = nen≤ η m
+         ⇓m      = nereadback≤⇓ η w w⇓m
+         wu      = ne-· (nev≤ η w) u
+         ⟦wu⟧    = reflect B wu ( ne-· m′ n
+                                 , bind⇓ (λ m → mapᵖ (ne-· m) (readback u))
+                                         ⇓m
+                                         (map⇓ (ne-· m′) ⇓n))
+     in
+    v-ne wu , now⇓ , ⟦wu⟧
+
+var↑ : ∀ {Γ A} (x : Γ ∋ A)
+     → V⟦ A ⟧ (v-ne (ne-` x))
+var↑ {A} x = reflect A (ne-` x) (ne-` x , now⇓)
+
+⟦ide⟧ : ∀ Γ → E⟦ Γ ⟧ (id-env Γ)
+⟦ide⟧ ∅       = tt
+⟦ide⟧ (Γ ﹐ A) = E⟦⟧≤ wk (id-env Γ) (⟦ide⟧ Γ) , var↑ here
+
+normalize : ∀ Γ A (t : Γ ⊢ A)
+          → nf t ⇓
+normalize Γ A t =
+  let v , v⇓ , ⟦v⟧ = term t (id-env Γ) (⟦ide⟧ Γ)
+      n , ⇓n       = reify A v ⟦v⟧
+   in
+  n , bind⇓ readback v⇓ ⇓n
