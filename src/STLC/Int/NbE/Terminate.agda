@@ -125,11 +125,6 @@ mutual
     ∙ e▹ α (Γ ﹐ A) Δ Η B t (ρ 、 v) η
     ∙ λ i → pfix eval-body (~ i) α (Γ ﹐ A) Η B t (env≤ η ρ 、 val≤ η v)
 
--- TODO unused?
-eval≤ : ∀ {Γ Δ Η A} (t : Γ ⊢ A) (ρ : Env Δ Γ) (η : Η ≤ Δ)
-      → mapᵖ (val≤ η) (eval t ρ) ＝ eval t (env≤ η ρ)
-eval≤ {Γ} {Δ} {Η} {A} = fix eval≤-body Γ Δ Η A
-
 apply≤ : ∀ {Γ Δ A B} (f : Val Γ (A ⇒ B)) (v : Val Γ A) (η : Δ ≤ Γ)
        → mapᵖ (val≤ η) (apply f v) ＝ apply (val≤ η f) (val≤ η v)
 apply≤ f v η = apply≤-body f v η (dfix eval≤-body)
@@ -250,10 +245,6 @@ mutual
      ＝⟨⟩
     eta (val≤ η v)
       ∎
-
-readback≤ : ∀ {Γ Δ} A (η : Δ ≤ Γ) (v : Val Γ A)
-          → mapᵖ (nf≤ η) (readback v) ＝ readback (val≤ η v)
-readback≤ {Γ} {Δ} = fix readback≤-body Γ Δ
 
 nereadback≤ : ∀ {Γ Δ A} (η : Δ ≤ Γ) (t : Ne Val Γ A)
             → mapᵖ (nen≤ η) (nereadback t) ＝ nereadback (nev≤ η t)

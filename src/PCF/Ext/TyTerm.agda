@@ -4,6 +4,7 @@ open import Prelude
 open import Data.Empty
 open import Data.Unit
 open import Data.Nat hiding (_·_; Code; code-refl; decode; identity-system; code-is-prop)
+open import Data.List
 open import Data.String
 open import Structures.IdentitySystem
 open import Meta.Search.HLevel

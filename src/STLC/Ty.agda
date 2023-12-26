@@ -4,7 +4,7 @@ open import Prelude
 open import Data.Empty
 open import Data.Unit
 open import Data.Dec
-open import Data.List hiding (Code ; code-refl ; decode ; identity-system)
+open import Data.List
 open import Structures.IdentitySystem hiding (J)
 
 infixr 7 _⇒_
