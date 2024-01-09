@@ -37,65 +37,92 @@ data R : Ty → Term → 𝒰 where
      → R (T₁ ⇒ T₂) t
 -}
 
-R-case : (Ty → Term → ▹ 𝒰) → Ty → Term → 𝒰
-R-case R▹  𝟙        t = (∅ ⊢ t ⦂ 𝟙)
-                      × halts t
-R-case R▹ (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
-                      × halts t
-                      × (∀ s → ▸ R▹ T₁ s → Part (▸ R▹ T₂ (t · s)))
+data RF (R▹ : Ty → Term → ▹ 𝒰) : Ty → Term → 𝒰 where
+
+  R𝟙F : ∀ {t}
+      → ∅ ⊢ t ⦂ 𝟙
+      → halts t
+      → RF R▹ 𝟙 t
+
+  R⇒F : ∀ {T₁ T₂ t}
+     → ∅ ⊢ t ⦂ (T₁ ⇒ T₂)
+     → halts t
+     → (∀ s → ▸ R▹ T₁ s → Part (▸ R▹ T₂ (t · s)))
+     → RF R▹ (T₁ ⇒ T₂) t
 
 R-body : ▹ (Ty → Term → 𝒰) → Ty → Term → 𝒰
-R-body f = R-case (λ T t → f ⊛ next T ⊛ next t)
+R-body f▹ = RF λ T t → f▹ ⊛ next T ⊛ next t
 
 R : Ty → Term → 𝒰
 R = fix R-body
+
+-- un/rolling
+
+R⇉ : ∀ {T t}
+   → R T t
+   → RF ((next ∘_) ∘ R) T t
+R⇉ {T} {t} = transport λ i → fix-path R-body i T t
+
+⇉R : ∀ {T t}
+   → RF ((next ∘_) ∘ R) T t
+   → R T t
+⇉R {T} {t} = transport λ i → fix-path R-body (~ i) T t
 
 -- constructors
 
 R𝟙 : ∀ {t}
    → ∅ ⊢ t ⦂ 𝟙 → halts t
    → R 𝟙 t
-R𝟙 ⊢t h = ⊢t , h
+R𝟙 ⊢t h = ⇉R $ R𝟙F ⊢t h
 
 R⇒ : ∀ {T₁ T₂ t}
    → ∅ ⊢ t ⦂ (T₁ ⇒ T₂) → halts t
    → (∀ s → ▹ R T₁ s → Part (▹ R T₂ (t · s)))
    → R (T₁ ⇒ T₂) t
-R⇒ {T₁} {T₂} {t} ⊢t h r =
-  ⊢t , h , λ s → transport (λ i → ▹[ α ] pfix R-body (~ i) α T₁ s
-                                 → Part (▹[ α ] pfix R-body (~ i) α T₂ (t · s)))
-                           (r s)
+R⇒ {T₁} {T₂} {t} ⊢t h r = ⇉R $ R⇒F ⊢t h r
+
+{-
+-- TODO co/recursor
+
+R-rec : ∀ {ℓ : Level} {T t} {A : 𝒰 ℓ}
+      → (∅ ⊢ t ⦂ 𝟙 → halts t → A)
+      → (∀ {T₁} {T₂} → ∅ ⊢ t ⦂ (T₁ ⇒ T₂) → halts t → (∀ s → ▹ R T₁ s → Part (▹ R T₂ (t · s))) → A)
+      → R T t → A
+R-rec f1 ff r with R⇉ r
+... | R𝟙F ⊢t h    = f1 ⊢t h
+... | R⇒F ⊢t h rf = ff ⊢t h rf
+-}
 
 -- destructors
 
 R𝟙-match : ∀ {t}
    → R 𝟙 t
    → (∅ ⊢ t ⦂ 𝟙) × halts t
-R𝟙-match = id
+R𝟙-match r with R⇉ r
+... | R𝟙F ⊢t h = ⊢t , h
+
 
 R⇒-match : ∀ {T₁ T₂ t}
          → R (T₁ ⇒ T₂) t
          → (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → ▹ R T₁ s → Part (▹ R T₂ (t · s)))
-R⇒-match {T₁} {T₂} {t} (⊢t , h , r) =
-  ⊢t , h , λ s → transport (λ i → ▹[ α ] pfix R-body i α T₁ s
-                                 → Part (▹[ α ] pfix R-body i α T₂ (t · s)))
-                           (r s)
+R⇒-match {T₁} {T₂} {t} r with R⇉ r
+... | R⇒F ⊢t h r = ⊢t , h , r
 
 -- projections
 
 R-halts : ∀ {T t} → R T t → halts t
-R-halts {T = 𝟙}       (_ , h)     = h
-R-halts {T = T₁ ⇒ T₂} (_ , h , _) = h
+R-halts {T = 𝟙}       r = let _ , h     = R𝟙-match r in h
+R-halts {T = T₁ ⇒ T₂} r = let _ , h , _ = R⇒-match r in h
 
 R-typable-empty : ∀ {T t} → R T t → ∅ ⊢ t ⦂ T
-R-typable-empty {T = 𝟙}       (tp , _)     = tp
-R-typable-empty {T = T₁ ⇒ T₂} (tp , _ , _) = tp
+R-typable-empty {T = 𝟙}       r = let tp , _     = R𝟙-match r in tp
+R-typable-empty {T = T₁ ⇒ T₂} r = let tp , _ , _ = R⇒-match r in tp
 
 -- R properties
 
 step-preserves-R : ∀ {T t t′}
                  → (t —→ t′) → R T t → R T t′
-step-preserves-R {T = 𝟙}       S r = let tp , h = R𝟙-match r in
+step-preserves-R {T = 𝟙}       S r = let tp , h      = R𝟙-match r in
   R𝟙 (preserve tp S) (step-preserves-halting S .fst h)
 step-preserves-R {T = T₁ ⇒ T₂} S r = let tp , h , Ri = R⇒-match r in
   R⇒ (preserve tp S) (step-preserves-halting S .fst h)
@@ -110,7 +137,7 @@ multistep-preserves-R {T} {t} {t′} (.t —→⟨ TM ⟩ M) Rt =
 
 step-preserves-R' : ∀ {T t t′}
                   → ∅ ⊢ t ⦂ T → (t —→ t′) → R T t′ → R T t
-step-preserves-R' {T = 𝟙}       {t} {t′} tp S r = let _ , h′ = R𝟙-match r in
+step-preserves-R' {T = 𝟙}       {t} {t′} tp S r = let _ , h′      = R𝟙-match r in
   R𝟙 tp (step-preserves-halting S .snd h′)
 step-preserves-R' {T = T₁ ⇒ T₂} {t} {t′} tp S r = let _ , h′ , Ri = R⇒-match r in
   R⇒ tp (step-preserves-halting S .snd h′)
