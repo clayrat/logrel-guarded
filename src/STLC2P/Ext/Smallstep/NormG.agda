@@ -43,38 +43,56 @@ data R : Ty → Term → 𝒰 where
      → R (T₁ 𝕩 T₂) t
 -}
 
-R-case : (Ty → Term → ▹ 𝒰) → Ty → Term → 𝒰
-R-case R▹  𝟚        t = (∅ ⊢ t ⦂ 𝟚)
-                      × halts t
-R-case R▹ (T₁ ⇒ T₂) t = (∅ ⊢ t ⦂ (T₁ ⇒ T₂))
-                      × halts t
-                      × (∀ s → ▸ R▹ T₁ s → Part (▸ R▹ T₂ (t · s)))
-R-case R▹ (T₁ 𝕩 T₂) t = (∅ ⊢ t ⦂ T₁ 𝕩 T₂)
-                      × halts t
-                      × ▸ R▹ T₁ (t ⇀₁)
-                      × ▸ R▹ T₂ (t ⇀₂)
+data RF (R▹ : Ty → Term → ▹ 𝒰) : Ty → Term → 𝒰 where
+
+  R𝟚F : ∀ {t}
+      → ∅ ⊢ t ⦂ 𝟚
+      → halts t
+      → RF R▹ 𝟚 t
+
+  R⇒F : ∀ {T₁ T₂ t}
+     → ∅ ⊢ t ⦂ (T₁ ⇒ T₂)
+     → halts t
+     → (∀ s → ▸ R▹ T₁ s → Part (▸ R▹ T₂ (t · s)))
+     → RF R▹ (T₁ ⇒ T₂) t
+
+  R𝕩F : ∀ {T₁ T₂ t}
+      → ∅ ⊢ t ⦂ T₁ 𝕩 T₂
+      → halts t
+      → ▸ R▹ T₁ (t ⇀₁)
+      → ▸ R▹ T₂ (t ⇀₂)
+      → RF R▹ (T₁ 𝕩 T₂) t
 
 R-body : ▹ (Ty → Term → 𝒰) → Ty → Term → 𝒰
-R-body f = R-case (λ T t → f ⊛ next T ⊛ next t)
+R-body f▹ = RF λ T t → f▹ ⊛ next T ⊛ next t
 
 R : Ty → Term → 𝒰
 R = fix R-body
+
+-- un/rolling
+
+R⇉ : ∀ {T t}
+   → R T t
+   → RF ((next ∘_) ∘ R) T t
+R⇉ {T} {t} = transport λ i → fix-path R-body i T t
+
+⇉R : ∀ {T t}
+   → RF ((next ∘_) ∘ R) T t
+   → R T t
+⇉R {T} {t} = transport λ i → fix-path R-body (~ i) T t
 
 -- constructors
 
 R𝟚 : ∀ {t}
    → ∅ ⊢ t ⦂ 𝟚 → halts t
    → R 𝟚 t
-R𝟚 ⊢t h = ⊢t , h
+R𝟚 ⊢t h = ⇉R $ R𝟚F ⊢t h
 
 R⇒ : ∀ {T₁ T₂ t}
    → ∅ ⊢ t ⦂ (T₁ ⇒ T₂) → halts t
    → (∀ s → ▹ R T₁ s → Part (▹ R T₂ (t · s)))
    → R (T₁ ⇒ T₂) t
-R⇒ {T₁} {T₂} {t} ⊢t h r =
-  ⊢t , h , λ s → transport (λ i → ▹[ α ] pfix R-body (~ i) α T₁ s
-                                 → Part (▹[ α ] pfix R-body (~ i) α T₂ (t · s)))
-                           (r s)
+R⇒ {T₁} {T₂} {t} ⊢t h r = ⇉R $ R⇒F ⊢t h r
 
 R𝕩 : ∀ {T₁ T₂ t}
    → ∅ ⊢ t ⦂ T₁ 𝕩 T₂
@@ -82,45 +100,39 @@ R𝕩 : ∀ {T₁ T₂ t}
    → ▹ R T₁ (t ⇀₁)
    → ▹ R T₂ (t ⇀₂)
    → R (T₁ 𝕩 T₂) t
-R𝕩 {T₁} {T₂} {t} ⊢t h r1 r2 =
-  ⊢t , h
-  , transport (λ i → ▹[ α ] pfix R-body (~ i) α T₁ (t ⇀₁)) r1
-  , transport (λ i → ▹[ α ] pfix R-body (~ i) α T₂ (t ⇀₂)) r2
+R𝕩 {T₁} {T₂} {t} ⊢t h r1 r2 = ⇉R $ R𝕩F ⊢t h r1 r2
 
 -- destructors
 
 R𝟚-match : ∀ {t}
    → R 𝟚 t
    → (∅ ⊢ t ⦂ 𝟚) × halts t
-R𝟚-match = id
+R𝟚-match r with R⇉ r
+... | R𝟚F ⊢t h = ⊢t , h
 
 R⇒-match : ∀ {T₁ T₂ t}
          → R (T₁ ⇒ T₂) t
          → (∅ ⊢ t ⦂ (T₁ ⇒ T₂)) × halts t × (∀ s → ▹ R T₁ s → Part (▹ R T₂ (t · s)))
-R⇒-match {T₁} {T₂} {t} (⊢t , h , r) =
-  ⊢t , h , λ s → transport (λ i → ▹[ α ] pfix R-body i α T₁ s
-                                 → Part (▹[ α ] pfix R-body i α T₂ (t · s)))
-                            (r s)
+R⇒-match r with R⇉ r
+... | R⇒F ⊢t h r = ⊢t , h , r
 
 R𝕩-match : ∀ {T₁ T₂ t}
          → R (T₁ 𝕩 T₂) t
          → (∅ ⊢ t ⦂ T₁ 𝕩 T₂) × halts t × ▹ R T₁ (t ⇀₁) × ▹ R T₂ (t ⇀₂)
-R𝕩-match {T₁} {T₂} {t} (⊢t , h , r1 , r2) =
-  ⊢t , h
-  , transport (λ i → ▹[ α ] pfix R-body i α T₁ (t ⇀₁)) r1
-  , transport (λ i → ▹[ α ] pfix R-body i α T₂ (t ⇀₂)) r2
+R𝕩-match r with R⇉ r
+... | R𝕩F ⊢t h r1 r2 = ⊢t , h , r1 , r2
 
 -- projections
 
 R-halts : ∀ {T t} → R T t → halts t
-R-halts {T = 𝟚}       (_ , h)     = h
-R-halts {T = T₁ ⇒ T₂} (_ , h , _) = h
-R-halts {T = T₁ 𝕩 T₂} (_ , h , _) = h
+R-halts {T = 𝟚}       r = let _ , h     = R𝟚-match r in h
+R-halts {T = T₁ ⇒ T₂} r = let _ , h , _ = R⇒-match r in h
+R-halts {T = T₁ 𝕩 T₂} r = let _ , h , _ = R𝕩-match r in h
 
 R-typable-empty : ∀ {T t} → R T t → ∅ ⊢ t ⦂ T
-R-typable-empty {T = 𝟚}       (tp , _)     = tp
-R-typable-empty {T = T₁ ⇒ T₂} (tp , _ , _) = tp
-R-typable-empty {T = T₁ 𝕩 T₂} (tp , _ , _) = tp
+R-typable-empty {T = 𝟚}       r = let tp , _     = R𝟚-match r in tp
+R-typable-empty {T = T₁ ⇒ T₂} r = let tp , _ , _ = R⇒-match r in tp
+R-typable-empty {T = T₁ 𝕩 T₂} r = let tp , _ , _ = R𝕩-match r in tp
 
 -- R properties
 
@@ -261,12 +273,12 @@ msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)      
   go ((y , p) ∷ c) x A .p .y (there _    here)         | no ctra = here
   go ((y , p) ∷ c) x A  T  i (there i≠x (there i≠y l)) | no ctra = there i≠y (go c x A T i (there i≠x l))
 msubst-R     {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)        i =
-  msubst-R ⊢L i >>=ᵖ λ R1 →
-  msubst-R ⊢M i >>=ᵖ λ R2 →
-  let (_ , _ , R1→) = R⇒-match R1
-      Rapp = R1→ (msubst e M) (next R2)
-    in
-  later $ Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp
+  bothᵖ (msubst-R ⊢L i) (msubst-R ⊢M i) >>=ᵖ λ where
+    (R1 , R2) →
+       let (_ , _ , R1→) = R⇒-match R1
+           Rapp = R1→ (msubst e M) (next R2)
+         in
+       later $ Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp
 ------ booleans ------
 msubst-R     {e}                          ⊢𝓉                               i =
   let mt = sym $ msubst-true e in
@@ -280,39 +292,41 @@ msubst-R     {e} {.(⁇ L ↑ M ↓ N)}   {T}       (⊢⁇ {L} {M} {N} ⊢L ⊢
   msubst-R ⊢L i >>=ᵖ go
   where
   go : R 𝟚 (msubst e L) → Part (R T (msubst e (⁇ L ↑ M ↓ N)))
-  go (⊢mL , .(ƛ _ ⇒ _)  , S , V-ƛ) = absurd (¬ƛ⦂𝟚 $ multi-preserve ⊢mL S)
-  go (⊢mL , .𝓉          , S , V-𝓉) =
+  go r with R𝟚-match r
+  ... | (⊢mL , .(ƛ _ ⇒ _)  , S , V-ƛ) = absurd (¬ƛ⦂𝟚 $ multi-preserve ⊢mL S)
+  ... | (⊢mL , .𝓉          , S , V-𝓉) =
     mapᵖ (subst (R T) (sym $ msubst-if e L M N) ∘
           multistep-preserves-R'
             (⊢⁇ ⊢mL (msubst-preserves-typing i ⊢M) (msubst-preserves-typing i ⊢N))
             (multistep-test0 S —↠+ β-𝓉))
          (msubst-R ⊢M i)
-  go (⊢mL , .𝒻         , S , V-𝒻) =
+  ... | (⊢mL , .𝒻         , S , V-𝒻) =
     mapᵖ (subst (R T) (sym $ msubst-if e L M N) ∘
           multistep-preserves-R'
             (⊢⁇ ⊢mL (msubst-preserves-typing i ⊢M) (msubst-preserves-typing i ⊢N))
             (multistep-test0 S —↠+ β-𝒻))
          (msubst-R ⊢N i)
-  go (⊢mL , .(〈 _ ⹁ _ 〉) , S , V-〈〉 _ _) = absurd (¬〈〉⦂𝟚 $ multi-preserve ⊢mL S)
+  ... | (⊢mL , .(〈 _ ⹁ _ 〉) , S , V-〈〉 _ _) = absurd (¬〈〉⦂𝟚 $ multi-preserve ⊢mL S)
+
 ------ pairs ------
 msubst-R     {e} {.(〈 L ⹁ M 〉)}     {.(A 𝕩 B)} (⊢〈〉 {L} {M} {A} {B} ⊢L ⊢M) i =
   let mp = sym $ msubst-pair e L M
       ⊢mLM = ⊢〈〉 (msubst-preserves-typing i ⊢L) (msubst-preserves-typing i ⊢M)
     in
-  msubst-R ⊢L i >>=ᵖ λ R1 →
-  msubst-R ⊢M i >>=ᵖ λ R2 →
-  let t1 , s1 , v1 = R-halts R1
-      t2 , s2 , v2 = R-halts R2
-      s12 = multistep-pairl s1 —↠∘ multistep-pairr v1 s2
-    in
-  now $ R𝕩 (subst (λ q → ∅ ⊢ q ⦂ A 𝕩 B) mp ⊢mLM)
-           (subst halts mp $ 〈 t1 ⹁ t2 〉 , s12 , V-〈〉 v1 v2)
-           (next $ subst (λ q → R A (q ⇀₁)) mp $
-              multistep-preserves-R' (⊢⇀₁ ⊢mLM) (multistep-fst s12 —↠+ β-〈〉₁ v1 v2) $
-              multistep-preserves-R s1 R1)
-           (next $ (subst (λ q → R B (q ⇀₂)) mp $
-              multistep-preserves-R' (⊢⇀₂ ⊢mLM) (multistep-snd s12 —↠+ β-〈〉₂ v1 v2) $
-              multistep-preserves-R s2 R2))
+  map²ᵖ (λ R1 R2 →
+           let t1 , s1 , v1 = R-halts R1
+               t2 , s2 , v2 = R-halts R2
+               s12 = multistep-pairl s1 —↠∘ multistep-pairr v1 s2
+             in
+           R𝕩 (subst (λ q → ∅ ⊢ q ⦂ A 𝕩 B) mp ⊢mLM)
+              (subst halts mp $ 〈 t1 ⹁ t2 〉 , s12 , V-〈〉 v1 v2)
+              (next $ subst (λ q → R A (q ⇀₁)) mp $
+                 multistep-preserves-R' (⊢⇀₁ ⊢mLM) (multistep-fst s12 —↠+ β-〈〉₁ v1 v2) $
+                 multistep-preserves-R s1 R1)
+              (next $ (subst (λ q → R B (q ⇀₂)) mp $
+                 multistep-preserves-R' (⊢⇀₂ ⊢mLM) (multistep-snd s12 —↠+ β-〈〉₂ v1 v2) $
+                 multistep-preserves-R s2 R2)))
+        (msubst-R ⊢L i) (msubst-R ⊢M i)
 msubst-R     {e} {.(L ⇀₁)}         {T = A}  (⊢⇀₁ {L} {B} ⊢L)              i =
   msubst-R ⊢L i >>=ᵖ λ Rl →
   let _ , _ , Ra , _ = R𝕩-match Rl in

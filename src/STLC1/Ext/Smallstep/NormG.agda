@@ -4,6 +4,7 @@ module STLC1.Ext.Smallstep.NormG where
 open import Prelude hiding (_⊆_)
 open import Data.Empty
 open import Data.Dec
+open import Data.Sum
 open import Data.String
 open import Data.Maybe
 open import Data.List
@@ -82,15 +83,25 @@ R⇒ : ∀ {T₁ T₂ t}
 R⇒ {T₁} {T₂} {t} ⊢t h r = ⇉R $ R⇒F ⊢t h r
 
 {-
--- TODO co/recursor
+-- TODO generalize co/recursor
 
-R-rec : ∀ {ℓ : Level} {T t} {A : 𝒰 ℓ}
-      → (∅ ⊢ t ⦂ 𝟙 → halts t → A)
-      → (∀ {T₁} {T₂} → ∅ ⊢ t ⦂ (T₁ ⇒ T₂) → halts t → (∀ s → ▹ R T₁ s → Part (▹ R T₂ (t · s))) → A)
-      → R T t → A
-R-rec f1 ff r with R⇉ r
+R-rec : ∀ {ℓ : Level} {P : Ty → Term → 𝒰 ℓ}
+      → (∀ {t} → ∅ ⊢ t ⦂ 𝟙 → halts t → P 𝟙 t)
+      → (∀ {T₁ T₂ t} → ∅ ⊢ t ⦂ (T₁ ⇒ T₂) → halts t → (∀ s → ▹ (P T₁ s ⊎ R T₁ s) → Part (▹ (P T₂ (t · s) × R T₂ (t · s)))) → P (T₁ ⇒ T₂) t)
+      → (∀ {T t} → P T t → ((∅ ⊢ t ⦂ 𝟙) × halts t) ⊎ (halts t × (Σ[ T₁ ꞉ Ty ] Σ[ T₂ ꞉ Ty ] (∅ ⊢ t ⦂ T₁ ⇒ T₂) × (∀ s → ▹ P T₁ s → Part (▹ P T₂ (t · s))))))
+      → ∀ {T t} → R T t → P T t
+R-rec f1 ff u r with R⇉ r
 ... | R𝟙F ⊢t h    = f1 ⊢t h
-... | R⇒F ⊢t h rf = ff ⊢t h rf
+... | R⇒F ⊢t h rf = ff ⊢t h λ s k → {!!}
+
+-- projection
+
+R-proj : ∀ {T t} → R T t → (∅ ⊢ t ⦂ T) × halts t
+R-proj = R-rec (λ ⊢t h → ⊢t , h) (λ ⊢t h _ → ⊢t , h) (λ {T} {t} → go {T} {t})
+  where
+  go : ∀ {T} {t} → (∅ ⊢ t ⦂ T) × halts t → (∅ ⊢ t ⦂ 𝟙) × halts t ⊎ halts t × (Σ[ T₁ ꞉ Ty ] Σ[ T₂ ꞉ Ty ] ((∅ ⊢ t ⦂ T₁ ⇒ T₂) × (∀ s → ▹ ((∅ ⊢ s ⦂ T₁) × halts s) → Part (▹ ((∅ ⊢ t · s ⦂ T₂) × halts (t · s))))))
+  go {T = 𝟙      } ⊢t×h = inl ⊢t×h
+  go {T = T₁ ⇒ T₂} (⊢t , h) = inr (h , T₁ , T₂ , ⊢t , λ s k → now (▹map {!!} k))
 -}
 
 -- destructors
@@ -100,7 +111,6 @@ R𝟙-match : ∀ {t}
    → (∅ ⊢ t ⦂ 𝟙) × halts t
 R𝟙-match r with R⇉ r
 ... | R𝟙F ⊢t h = ⊢t , h
-
 
 R⇒-match : ∀ {T₁ T₂ t}
          → R (T₁ ⇒ T₂) t
@@ -254,12 +264,12 @@ msubst-R {c} {e} {.(ƛ x ⇒ N)} {.(A ⇒ B)} (⊢ƛ {x} {N} {A} {B} ⊢N)      
   go ((y , p) ∷ c) x A .p .y (there _    here)         | no ctra = here
   go ((y , p) ∷ c) x A  T  i (there i≠x (there i≠y l)) | no ctra = there i≠y (go c x A T i (there i≠x l))
 msubst-R     {e} {.(L · M)}    {T}       (_⊢·_ {L} {M} {A} ⊢L ⊢M)        i =
-  msubst-R ⊢L i >>=ᵖ λ R1 →
-  msubst-R ⊢M i >>=ᵖ λ R2 →
-  let (_ , _ , R1→) = R⇒-match R1
-      Rapp = R1→ (msubst e M) (next R2)
-    in
-  later $ Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp
+  bothᵖ (msubst-R ⊢L i) (msubst-R ⊢M i) >>=ᵖ λ where
+    (R1 , R2) →
+      let (_ , _ , R1→) = R⇒-match R1
+          Rapp = R1→ (msubst e M) (next R2)
+       in
+      later $ Part▹ (subst (λ q → ▹ R T q) (sym $ msubst-app e L M)) Rapp
 
 normalization : ∀ {t T}
               → ∅ ⊢ t ⦂ T
